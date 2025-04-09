@@ -238,20 +238,20 @@
             height: 28px;
             font-size: 14pt;
             text-align: center;
-            border: 2px solid var(--primary-color);
-            border-radius: 6px;
+            background-color: transparent;
+            border: none;
+            border-bottom: 2px solid var(--primary-color);
             padding: 2px 5px;
             /* Remove spinner buttons */
             appearance: textfield;
             -moz-appearance: textfield;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            transition: border-color 0.3s, box-shadow 0.3s;
+            transition: border-color 0.3s;
         }
         
         .answer-input:focus {
             outline: none;
             border-color: var(--accent-color-2);
-            box-shadow: 0 0 0 3px rgba(255, 217, 61, 0.25);
+            box-shadow: none;
         }
         
         /* Remove spinner buttons in WebKit browsers (Chrome, Safari, Edge) */
@@ -265,6 +265,8 @@
             color: var(--secondary-color);
             font-weight: bold;
             position: relative;
+            border-color: var(--secondary-color);
+            background-color: rgba(107, 203, 119, 0.05);
         }
         
         .correct-answer::before {
@@ -276,6 +278,8 @@
             color: var(--accent-color);
             font-weight: bold;
             position: relative;
+            border-color: var(--accent-color);
+            background-color: rgba(255, 107, 107, 0.05);
         }
         
         .incorrect-answer::before {
@@ -287,6 +291,7 @@
             color: orange;
             font-weight: bold;
             border-color: orange;
+            background-color: transparent;
         }
         
         .feedback {
@@ -462,14 +467,29 @@
                 margin: 0;
             }
             
-            /* Hide controls and decorative elements */
-            .controls, .math-symbols {
+            /* Hide controls, gamification elements, and decorative elements */
+            .controls, .math-symbols, .gamification-panel, .progress-container {
                 display: none;
             }
             
             /* Remove hover effects */
             .problem:hover {
                 background-color: transparent;
+            }
+            
+            /* Print-friendly styles for interactive elements */
+            .answer-input {
+                border: none;
+                border-bottom: 1px solid #000;
+                background: transparent;
+                width: 35px;
+                height: 20px;
+                font-size: 12pt;
+            }
+            
+            /* Hide feedback elements in print */
+            .feedback {
+                display: none;
             }
             
             /* Ensure problem spacing is optimized for print */
@@ -556,13 +576,6 @@
             </div>
             
             <div class="toggles-container">
-                <div class="toggle-container interactive-mode">
-                    <span class="toggle-label" id="interactive-mode-label">Spill</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="interactive-mode" onchange="toggleInteractiveMode()">
-                        <span class="slider"></span>
-                    </label>
-                </div>
                 <div class="toggle-container">
                     <span class="toggle-label">Sortert rekkefølge</span>
                     <label class="toggle-switch">
@@ -577,6 +590,8 @@
                         <span class="slider"></span>
                     </label>
                 </div>
+                <!-- Hidden input for interactive mode, always checked -->
+                <input type="checkbox" id="interactive-mode" checked style="display: none;">
             </div>
         </div>
         <div class="gamification-panel" id="gamification-panel" style="display: none;">
@@ -903,7 +918,6 @@
         function displayProblems(problems) {
             const problemsList = document.getElementById('problems-list');
             const showResults = document.getElementById('show-results').checked;
-            const interactiveMode = document.getElementById('interactive-mode').checked;
             const progressContainer = document.getElementById('progress-container');
             
             // Clear existing problems
@@ -915,18 +929,14 @@
             // Update total problems count for progress tracking
             totalProblems = problems.length;
             
-            // Show/hide progress bar and gamification panel based on interactive mode
-            if (interactiveMode) {
-                progressContainer.style.display = 'block';
-                document.getElementById('gamification-panel').style.display = 'flex';
-                // Reset progress tracking when problems are redisplayed
-                answeredProblems = 0;
-                answeredIndices.clear();
-                updateProgressBar();
-            } else {
-                progressContainer.style.display = 'none';
-                document.getElementById('gamification-panel').style.display = 'none';
-            }
+            // Always show progress bar and gamification panel (interactive mode is always on)
+            progressContainer.style.display = 'block';
+            document.getElementById('gamification-panel').style.display = 'flex';
+            
+            // Reset progress tracking when problems are redisplayed
+            answeredProblems = 0;
+            answeredIndices.clear();
+            updateProgressBar();
             
             // Display all problems
             for (let i = 0; i < problems.length; i++) {
@@ -934,16 +944,8 @@
                 const div = document.createElement('div');
                 div.className = 'problem';
                 
-                if (interactiveMode) {
-                    // Create interactive mode with input field and feedback
-                    createInteractiveProblem(div, problem, i);
-                } else if (showResults) {
-                    // Show the equation with the pre-calculated answer
-                    div.innerHTML = problem.equation + problem.result;
-                } else {
-                    // Show the equation with an answer space for writing
-                    div.innerHTML = problem.equation + '<span class="answer-space"></span>';
-                }
+                // Always use interactive mode
+                createInteractiveProblem(div, problem, i);
                 
                 problemsList.appendChild(div);
             }
@@ -964,8 +966,8 @@
                 showAnswersLabel.classList.remove('active');
             }
             
-            // Don't regenerate problems if in interactive mode
-            if (interactiveMode) return;
+            // Don't regenerate problems in interactive mode (which is always on)
+            return;
             
             // Just redisplay with current settings
             displayProblems(window.problemsData || []);
@@ -998,40 +1000,14 @@
             displayProblems(finalProblems);
         }
         
-        /**
-         * Toggle interactive mode
-         */
-        function toggleInteractiveMode() {
-            const interactiveMode = document.getElementById('interactive-mode').checked;
-            const progressContainer = document.getElementById('progress-container');
-            
-            // Update label styling
-            const interactiveModeLabel = document.getElementById('interactive-mode-label');
-            if (interactiveMode) {
-                interactiveModeLabel.classList.add('active');
-                progressContainer.style.display = 'block'; // Show progress bar
-            } else {
-                interactiveModeLabel.classList.remove('active');
-                progressContainer.style.display = 'none'; // Hide progress bar
-            }
-            
-            // Reset progress tracking
-            answeredProblems = 0;
-            answeredIndices.clear();
-            updateProgressBar();
-            
-            // Just redisplay with current settings
-            displayProblems(window.problemsData || []);
-        }
+        // Interactive mode is always enabled, so this function is no longer needed
         
         /**
          * Updates the progress when a user fills in an answer and leaves the field
          * @param {Event} event - The blur event
          */
         function updateProgress(event) {
-            const interactiveMode = document.getElementById('interactive-mode').checked;
-            if (!interactiveMode) return; // Only track progress in interactive mode
-            
+            // Interactive mode is always on, so no need to check
             const input = event.target;
             if (!input.value || input.value.trim() === '') return; // Only count if field has content
             
@@ -1091,18 +1067,10 @@
                 showAnswersLabel.classList.remove('active');
             }
             
-            // Set initial label styling for interactive mode toggle
-            const interactiveMode = document.getElementById('interactive-mode').checked;
-            const interactiveModeLabel = document.getElementById('interactive-mode-label');
-            if (interactiveMode) {
-                interactiveModeLabel.classList.add('active');
-                // Initialize progress bar if starting in interactive mode
-                document.getElementById('progress-container').style.display = 'block';
-                updateProgressBar();
-            } else {
-                interactiveModeLabel.classList.remove('active');
-                document.getElementById('progress-container').style.display = 'none';
-            }
+            // Always initialize in interactive mode
+            document.getElementById('progress-container').style.display = 'block';
+            document.getElementById('gamification-panel').style.display = 'flex';
+            updateProgressBar();
         };
     </script>
 </body>
