@@ -429,6 +429,13 @@
             transition: width 0.4s ease;
         }
 
+        /* Class specifically for elements that shouldn't print */
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+        }
+        
         /* ============= PRINT STYLES ============= */
         @media print {
             /* Reset body styles for print */
@@ -468,7 +475,7 @@
             }
             
             /* Hide controls, gamification elements, and decorative elements */
-            .controls, .math-symbols, .gamification-panel, .progress-container {
+            .controls, .math-symbols, .gamification-panel, .progress-container, .no-print {
                 display: none;
             }
             
@@ -594,7 +601,7 @@
                 <input type="checkbox" id="interactive-mode" checked style="display: none;">
             </div>
         </div>
-        <div class="gamification-panel" id="gamification-panel" style="display: none;">
+        <div class="gamification-panel no-print" id="gamification-panel" style="display: none;">
             <div class="points-container">
                 <span class="points-label">Poeng:</span>
                 <span class="points-value" id="points-display">0</span>
@@ -605,7 +612,7 @@
                 <span class="highest-streak">(Beste: <span id="highest-streak">0</span>)</span>
             </div>
         </div>
-        <div class="progress-container" id="progress-container">
+        <div class="progress-container no-print" id="progress-container">
             <div class="progress-bar" id="progress-bar"></div>
         </div>
         <div class="problems-list" id="problems-list">
@@ -956,21 +963,56 @@
          */
         function toggleAnswers() {
             const showResults = document.getElementById('show-results').checked;
-            const interactiveMode = document.getElementById('interactive-mode').checked;
+            const gamificationPanel = document.getElementById('gamification-panel');
+            const progressContainer = document.getElementById('progress-container');
             
             // Update label styling
             const showAnswersLabel = document.getElementById('show-answers-label');
             if (showResults) {
                 showAnswersLabel.classList.add('active');
+                
+                // Fill in all input boxes with correct answers
+                const inputs = document.querySelectorAll('.answer-input');
+                inputs.forEach(input => {
+                    const correctAnswer = input.getAttribute('data-correct');
+                    input.value = correctAnswer;
+                    input.readOnly = true;
+                    
+                    // Clear any existing feedback
+                    const feedbackId = input.id.replace('answer', 'feedback');
+                    const feedback = document.getElementById(feedbackId);
+                    if (feedback) feedback.textContent = '';
+                });
+                
+                // Hide gamification elements
+                gamificationPanel.style.display = 'none';
+                progressContainer.style.display = 'none';
+                
+                // Reset gamification values
+                currentPoints = 0;
+                currentStreak = 0;
+                document.getElementById('points-display').textContent = '0';
+                document.getElementById('streak-display').textContent = '0';
             } else {
                 showAnswersLabel.classList.remove('active');
+                
+                // Clear all input boxes and make them editable again
+                const inputs = document.querySelectorAll('.answer-input');
+                inputs.forEach(input => {
+                    input.value = '';
+                    input.readOnly = false;
+                    input.className = 'answer-input'; // Reset any correct/incorrect styling
+                });
+                
+                // Show gamification elements again
+                gamificationPanel.style.display = 'flex';
+                progressContainer.style.display = 'block';
+                
+                // Reset progress
+                answeredProblems = 0;
+                answeredIndices.clear();
+                updateProgressBar();
             }
-            
-            // Don't regenerate problems in interactive mode (which is always on)
-            return;
-            
-            // Just redisplay with current settings
-            displayProblems(window.problemsData || []);
         }
         
         /**
