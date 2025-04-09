@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gangeprøve</title>
+    <!-- Google Fonts for kid-friendly typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Fredoka+One&display=swap" rel="stylesheet">
+    <style>
+        /* Common variables */
+        :root {
+            --primary-color: #4D96FF;      /* Bright blue */
+            --secondary-color: #6BCB77;    /* Green */
+            --accent-color: #FF6B6B;       /* Coral */
+            --accent-color-2: #FFD93D;     /* Yellow */
+            --background-color: #F4F9F9;   /* Light blue-gray */
+            --card-color: #FFFFFF;         /* White */
+            --text-color: #333333;         /* Dark gray */
+        }
+        
+        /* ============= SCREEN STYLES ============= */
+        /* These styles apply only to screen viewing (not printing) */
+        @media screen {
+            body {
+                font-family: 'Nunito', sans-serif;
+                margin: 0;
+                padding: 20px;
+                background-color: var(--background-color);
+                color: var(--text-color);
+                line-height: 1.6;
+            }
+            
+            .container {
+                width: autos; /* A4 width */
+                min-height: 297mm; /* A4 height */
+                height: auto; /* Allow container to grow with content */
+                margin: 0 auto;
+                padding: 10mm;
+                position: relative;
+                background-color: var(--card-color);
+                border-radius: 15px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            }
+        }
+        
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            text-align: center;
+            margin-bottom: 8mm;
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* ============= SHARED STYLES ============= */
+        /* Styles that apply to both screen and print */
+        
+        /* Problems grid layout */
+        .problems-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 5px 10px;
+            padding: 15px;
+        }
+        
+        /* Screen-specific styling for problems list */
+        @media screen {
+            .problems-list {
+                background-color: #f9f9f9;
+                border-radius: 10px;
+                box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.05);
+                height: auto; /* Allow height to grow with content */
+            }
+        }
+        
+        .problem {
+            margin-bottom: 14px; /* Increased line spacing */
+            font-size: 14pt; /* Increased font size */
+            font-weight: bold;
+            padding: 5px 8px;
+            font-family: 'Nunito', sans-serif;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        
+        .problem:hover {
+            background-color: rgba(77, 150, 255, 0.1);
+        }
+        
+        /* Styles for aligned operators */
+        .number-part {
+            display: inline-block;
+            width: 2ch;
+            text-align: right;
+        }
+        
+        .operator {
+            display: inline-block;
+            width: 3ch;
+            text-align: center;
+            color: var(--accent-color);
+        }
+        
+        .answer-space {
+            display: inline-block;
+            width: 35px;
+            border-bottom: 2px solid var(--primary-color);
+            margin-left: 3px;
+        }
+        
+
+        
+        .controls {
+            margin: 10px 0 20px 0;
+            text-align: center;
+            background: linear-gradient(145deg, #f0f9ff, #e6f7ff);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .controls label {
+            margin-right: 15px;
+            font-size: 12pt;
+            cursor: pointer;
+        }
+        
+        /* Toggle switch styles */
+        .toggles-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .toggle-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            min-width: 140px;
+            transition: transform 0.2s;
+        }
+        
+        .toggle-container:hover {
+            transform: translateY(-3px);
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin: 0 10px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        /* Default toggle color */
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        
+        /* Special colors for different toggles */
+        .show-answers input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+        
+        .interactive-mode input:checked + .slider {
+            background-color: var(--secondary-color);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .toggle-label {
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 0 10px;
+            text-align: center;
+            color: var(--text-color);
+        }
+        
+        /* Active label color for sorting toggle */
+        .toggle-label.active {
+            color: #2196F3;
+        }
+        
+        /* Keep text color unchanged for show-answers and interactive-mode toggles */
+        .show-answers .toggle-label,
+        .interactive-mode .toggle-label {
+            color: inherit;
+        }
+        
+        .show-answers, .interactive-mode {
+            margin-top: 15px;
+        }
+        
+        /* Styles for interactive mode */
+        .answer-input {
+            width: 45px;
+            height: 28px;
+            font-size: 14pt;
+            text-align: center;
+            border: 2px solid var(--primary-color);
+            border-radius: 6px;
+            padding: 2px 5px;
+            /* Remove spinner buttons */
+            appearance: textfield;
+            -moz-appearance: textfield;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .answer-input:focus {
+            outline: none;
+            border-color: var(--accent-color-2);
+            box-shadow: 0 0 0 3px rgba(255, 217, 61, 0.25);
+        }
+        
+        /* Remove spinner buttons in WebKit browsers (Chrome, Safari, Edge) */
+        .answer-input::-webkit-outer-spin-button,
+        .answer-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .correct-answer {
+            color: var(--secondary-color);
+            font-weight: bold;
+            position: relative;
+        }
+        
+        .correct-answer::before {
+            content: "✓";
+            margin-right: 3px;
+        }
+        
+        .incorrect-answer {
+            color: var(--accent-color);
+            font-weight: bold;
+            position: relative;
+        }
+        
+        .incorrect-answer::before {
+            content: "✗";
+            margin-right: 3px;
+        }
+        
+        .invalid-answer {
+            color: orange;
+            font-weight: bold;
+            border-color: orange;
+        }
+        
+        .feedback {
+            display: inline-block;
+            margin-left: 5px;
+            font-weight: bold;
+        }
+        
+        .number-selection {
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .number-selection label {
+            margin-right: 8px;
+            font-size: 12pt;
+            display: inline-block;
+            width: 30px;
+            text-align: center;
+        }
+        
+        .number-selection input {
+            margin-right: 3px;
+        }
+        
+        .number-selection label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 50%;
+            background-color: var(--accent-color-2);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin: 0 5px 5px 0;
+        }
+        
+        .number-selection label:hover {
+            transform: translateY(-3px);
+            background-color: #FFE566;
+        }
+        
+        /* ============= PRINT STYLES ============= */
+        @media print {
+            /* Reset body styles for print */
+            body {
+                font-family: 'Nunito', sans-serif;
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+            
+            /* Reset container styles for print */
+            .container {
+                width: 210mm; /* A4 width */
+                height: 297mm; /* Full A4 height */
+                margin: 0;
+                padding: 8mm 8mm;
+                box-shadow: none;
+                border-radius: 0;
+                background-color: white;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+            
+            /* Reset problems list styles for print */
+            .problems-list {
+                background-color: white;
+                box-shadow: none;
+                padding: 0;
+                flex-grow: 1;
+            }
+            
+            /* Set page size */
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            
+            /* Hide controls and decorative elements */
+            .controls, .math-symbols {
+                display: none;
+            }
+            
+            /* Remove hover effects */
+            .problem:hover {
+                background-color: transparent;
+            }
+            
+            /* Ensure problem spacing is optimized for print */
+            .problem {
+                margin-bottom: 8px;
+                padding: 0;
+                font-size: 13pt;
+            }
+            
+            /* Header and footer adjustments */
+            h1 {
+                font-size: 20pt;
+                margin-top: 0;
+                margin-bottom: 10mm;
+            }
+            
+            .footer {
+                margin-top: 8mm;
+                font-size: 10pt;
+            }
+        }
+        
+        .interactive-mode .problem {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        
+        .interactive-mode .answer-input {
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <h1>Gangeprøve</h1>
+        <div class="controls">
+            <div class="number-selection">
+                <p>Velg hvilke gangetabeller du vil øve på:</p>
+                <div>
+                    <label>
+                        <input type="checkbox" name="a_number" value="1" checked onchange="createMultiplicationTest()">
+                        <span>1</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="2" checked onchange="createMultiplicationTest()">
+                        <span>2</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="3" checked onchange="createMultiplicationTest()">
+                        <span>3</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="4" checked onchange="createMultiplicationTest()">
+                        <span>4</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="5" checked onchange="createMultiplicationTest()">
+                        <span>5</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="6" checked onchange="createMultiplicationTest()">
+                        <span>6</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="7" checked onchange="createMultiplicationTest()">
+                        <span>7</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="8" checked onchange="createMultiplicationTest()">
+                        <span>8</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="9" checked onchange="createMultiplicationTest()">
+                        <span>9</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="10" checked onchange="createMultiplicationTest()">
+                        <span>10</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="toggles-container">
+                <div class="toggle-container interactive-mode">
+                    <span class="toggle-label" id="interactive-mode-label">Interaktiv modus</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="interactive-mode" onchange="toggleInteractiveMode()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-container">
+                    <span class="toggle-label">Sortert rekkefølge</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="order-toggle" onchange="toggleOrder()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-container show-answers">
+                    <span class="toggle-label" id="show-answers-label">Vis svar</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="show-results" onchange="toggleAnswers()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="problems-list" id="problems-list">
+            <!-- Problems will be generated here via JavaScript -->
+        </div>
+        <div class="footer">
+            <p>Skriv svarene på linjene. <span style="color: var(--accent-color);">Lykke til! 🚀</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Generate multiplication problems based on selected numbers for 'a'
+        function generateProblems() {
+            // Get all checked number checkboxes
+            const selectedNumbers = [];
+            const checkboxes = document.querySelectorAll('input[name="a_number"]:checked');
+            
+            // If no checkboxes are selected, default to all numbers 1-10
+            if (checkboxes.length === 0) {
+                for (let i = 1; i <= 10; i++) {
+                    selectedNumbers.push(i);
+                }
+            } else {
+                // Add selected numbers to array
+                checkboxes.forEach(checkbox => {
+                    selectedNumbers.push(parseInt(checkbox.value));
+                });
+            }
+            
+            // Generate base problems using only selected numbers for 'a'
+            const baseProblems = [];
+            for (let i of selectedNumbers) {
+                for (let j = 1; j <= 10; j++) {
+                    baseProblems.push({
+                        a: i,
+                        b: j,
+                        result: i * j,
+                        equation: `<span class="number-part">${i}</span><span class="operator">×</span><span class="number-part">${j}</span><span class="operator">=</span>`
+                    });
+                }
+            }
+            
+            // Always ensure we have exactly 100 problems
+            const problems = [];
+            
+            // If we have fewer than 100 base problems, repeat them until we reach 100
+            if (baseProblems.length > 0) {
+                while (problems.length < 100) {
+                    const index = problems.length % baseProblems.length;
+                    problems.push(baseProblems[index]);
+                }
+            } else {
+                // Fallback: If somehow no problems were generated, use 1-10 multiplication
+                for (let count = 0; count < 100; count++) {
+                    const i = (count % 10) + 1;
+                    const j = Math.floor(count / 10) + 1;
+                    problems.push({
+                        a: i,
+                        b: j,
+                        result: i * j,
+                        equation: `<span class="number-part">${i}</span><span class="operator">×</span><span class="number-part">${j}</span><span class="operator">=</span>`
+                    });
+                }
+            }
+            
+            return problems;
+        }
+        
+        // Shuffle an array using Fisher-Yates algorithm
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        /**
+         * Process problems layout (column-first vs random)
+         */
+        function processProblemsLayout(problems, isRandom) {
+            // For numeric/sequential ordering, reorganize the array so that it fills
+            // vertically (column-first) instead of horizontally (row-first)
+            const rowsPerColumn = 25; // 25 rows per column with 4 columns = 100 problems
+            const columnsCount = 4;
+            
+            // Create an array with the correct ordering
+            const finalProblems = [];
+            
+            if (!isRandom) {
+                // Organize problems in column-first order for sequential display
+                // This ensures each column reads from top to bottom with sequential problems
+                
+                // First, sort the problems by 'a' then by 'b' for proper numeric ordering
+                const sortedProblems = [...problems].sort((p1, p2) => {
+                    if (p1.a !== p2.a) return p1.a - p2.a;
+                    return p1.b - p2.b;
+                });
+                
+                // Create a 2D array to represent our 4 columns with 25 rows each
+                const grid = Array(columnsCount).fill().map(() => Array(rowsPerColumn).fill(null));
+                
+                // Fill the grid column by column
+                let problemIndex = 0;
+                for (let col = 0; col < columnsCount; col++) {
+                    for (let row = 0; row < rowsPerColumn; row++) {
+                        if (problemIndex < sortedProblems.length) {
+                            grid[col][row] = sortedProblems[problemIndex++];
+                        }
+                    }
+                }
+                
+                // Flatten the grid into our finalProblems array (reading row by row for HTML display)
+                for (let row = 0; row < rowsPerColumn; row++) {
+                    for (let col = 0; col < columnsCount; col++) {
+                        if (grid[col][row]) {
+                            finalProblems.push(grid[col][row]);
+                        }
+                    }
+                }
+            } else {
+                // For random order, just use the shuffled array
+                finalProblems.push(...shuffleArray([...problems]));
+            }
+            
+            return finalProblems;
+        }
+        
+        /**
+         * Update problems when checkboxes are toggled
+         */
+        function createMultiplicationTest() {
+            // Generate base problems
+            const problems = generateProblems();
+            
+            // Check ordering preference - toggle is now checked for sorted, unchecked for random
+            const isSorted = document.getElementById('order-toggle').checked;
+            const isRandom = !isSorted;
+            
+            // Process problems layout based on ordering preference
+            const finalProblems = processProblemsLayout(problems, isRandom);
+            
+            // Display problems using shared function
+            displayProblems(finalProblems);
+        }
+        
+        /**
+         * Creates an interactive problem with input field and feedback
+         * @param {HTMLElement} container - The container element for the problem
+         * @param {Object} problem - The problem object with equation and result
+         * @param {number} index - The index of the problem (for tabindex and ID)
+         */
+        function createInteractiveProblem(container, problem, index) {
+            const inputId = `answer-${index}`;
+            
+            // Create the HTML structure
+            container.innerHTML = problem.equation + 
+                `<input type="text" id="${inputId}" class="answer-input" data-correct="${problem.result}" tabindex="${index+1}" maxlength="3" inputmode="numeric" pattern="[0-9]*">` +
+                `<span id="feedback-${index}" class="feedback"></span>`;
+            
+            // Add event listeners after the element is added to the DOM
+            setTimeout(() => {
+                const input = document.getElementById(inputId);
+                if (!input) return;
+                
+                // Check answer on Tab or Enter key
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Tab' || e.key === 'Enter') {
+                        checkAnswer(inputId);
+                        
+                        // If Enter was pressed, prevent form submission and move to next input
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const nextInput = document.getElementById(`answer-${index+1}`);
+                            if (nextInput) nextInput.focus();
+                        }
+                    }
+                });
+                
+                // Also check on blur (when input loses focus)
+                input.addEventListener('blur', function() {
+                    if (this.value) checkAnswer(inputId);
+                });
+            }, 0);
+        }
+        
+        /**
+         * Validates and checks if an answer is correct
+         * @param {string} inputId - The ID of the input element to check
+         */
+        function checkAnswer(inputId) {
+            const input = document.getElementById(inputId);
+            const feedback = document.getElementById('feedback-' + inputId.split('-')[1]);
+            
+            // Keep the original value (don't clear it)
+            const originalValue = input.value;
+            // Trim spaces from input value
+            const trimmedValue = originalValue.trim();
+            
+            // Only update the input if we're removing spaces, not changing content
+            if (trimmedValue !== originalValue && /^\s*\d+\s*$/.test(originalValue)) {
+                input.value = trimmedValue;
+            }
+            
+            // Handle different input cases
+            if (trimmedValue === '') {
+                resetInputState(input, feedback);
+            } else if (!/^\d+$/.test(trimmedValue)) {
+                markAsInvalid(input, feedback);
+            } else {
+                checkNumericAnswer(input, feedback, trimmedValue);
+            }
+        }
+        
+        /**
+         * Reset input to default state
+         */
+        function resetInputState(input, feedback) {
+            input.className = 'answer-input';
+            feedback.textContent = '';
+        }
+        
+        /**
+         * Mark input as invalid (non-numeric)
+         */
+        function markAsInvalid(input, feedback) {
+            input.className = 'answer-input invalid-answer';
+            feedback.textContent = '!';
+            feedback.style.color = 'orange';
+        }
+        
+        /**
+         * Check if numeric answer is correct
+         */
+        function checkNumericAnswer(input, feedback, value) {
+            const userAnswer = parseInt(value);
+            const correctAnswer = parseInt(input.dataset.correct);
+            
+            if (userAnswer === correctAnswer) {
+                input.className = 'answer-input correct-answer';
+                feedback.textContent = '✓';
+                feedback.style.color = 'green';
+            } else {
+                input.className = 'answer-input incorrect-answer';
+                feedback.textContent = '✗';
+                feedback.style.color = 'red';
+            }
+        }
+        
+        /**
+         * Display problems based on current settings
+         */
+        function displayProblems(problems) {
+            const problemsList = document.getElementById('problems-list');
+            const showResults = document.getElementById('show-results').checked;
+            const interactiveMode = document.getElementById('interactive-mode').checked;
+            
+            // Clear existing problems
+            problemsList.innerHTML = '';
+            
+            // Store problems data globally for toggling answers
+            window.problemsData = problems;
+            
+            // Display all problems
+            for (let i = 0; i < problems.length; i++) {
+                const problem = problems[i];
+                const div = document.createElement('div');
+                div.className = 'problem';
+                
+                if (interactiveMode) {
+                    // Create interactive mode with input field and feedback
+                    createInteractiveProblem(div, problem, i);
+                } else if (showResults) {
+                    // Show the equation with the pre-calculated answer
+                    div.innerHTML = problem.equation + problem.result;
+                } else {
+                    // Show the equation with an answer space for writing
+                    div.innerHTML = problem.equation + '<span class="answer-space"></span>';
+                }
+                
+                problemsList.appendChild(div);
+            }
+        }
+        
+        /**
+         * Toggle answers visibility without regenerating the test
+         */
+        function toggleAnswers() {
+            const showResults = document.getElementById('show-results').checked;
+            const interactiveMode = document.getElementById('interactive-mode').checked;
+            
+            // Update label styling
+            const showAnswersLabel = document.getElementById('show-answers-label');
+            if (showResults) {
+                showAnswersLabel.classList.add('active');
+            } else {
+                showAnswersLabel.classList.remove('active');
+            }
+            
+            // Don't regenerate problems if in interactive mode
+            if (interactiveMode) return;
+            
+            // Just redisplay with current settings
+            displayProblems(window.problemsData || []);
+        }
+        
+        /**
+         * Toggle between sequential and random order
+         */
+        function toggleOrder() {
+            // Get current state - checked = sequential order, unchecked = random order
+            const isSorted = document.getElementById('order-toggle').checked;
+            
+            // Update toggle styling
+            const toggleSwitch = document.querySelector('#order-toggle + .slider');
+            if (isSorted) {
+                toggleSwitch.classList.add('active');
+            } else {
+                toggleSwitch.classList.remove('active');
+            }
+            
+            // Regenerate problems with new order
+            const problems = generateProblems();
+            
+            // Process problems layout based on ordering preference
+            // isSorted is true when toggle is checked, but we want random when unchecked
+            const isRandom = !isSorted;
+            const finalProblems = processProblemsLayout(problems, isRandom);
+            
+            // Display problems using shared function
+            displayProblems(finalProblems);
+        }
+        
+        /**
+         * Toggle interactive mode
+         */
+        function toggleInteractiveMode() {
+            const interactiveMode = document.getElementById('interactive-mode').checked;
+            
+            // Update label styling
+            const interactiveModeLabel = document.getElementById('interactive-mode-label');
+            if (interactiveMode) {
+                interactiveModeLabel.classList.add('active');
+            } else {
+                interactiveModeLabel.classList.remove('active');
+            }
+            
+            // Just redisplay with current settings
+            displayProblems(window.problemsData || []);
+        }
+        
+        // Run the test creation when the page loads
+        window.onload = function() {
+            createMultiplicationTest();
+            
+            // Set initial toggle styling
+            const isSorted = document.getElementById('order-toggle').checked;
+            const toggleSwitch = document.querySelector('#order-toggle + .slider');
+            
+            if (isSorted) {
+                toggleSwitch.classList.add('active');
+            } else {
+                toggleSwitch.classList.remove('active');
+            }
+            
+            // Set initial label styling for show answers toggle
+            const showResults = document.getElementById('show-results').checked;
+            const showAnswersLabel = document.getElementById('show-answers-label');
+            if (showResults) {
+                showAnswersLabel.classList.add('active');
+            } else {
+                showAnswersLabel.classList.remove('active');
+            }
+            
+            // Set initial label styling for interactive mode toggle
+            const interactiveMode = document.getElementById('interactive-mode').checked;
+            const interactiveModeLabel = document.getElementById('interactive-mode-label');
+            if (interactiveMode) {
+                interactiveModeLabel.classList.add('active');
+            } else {
+                interactiveModeLabel.classList.remove('active');
+            }
+        };
+    </script>
+</body>
+</html>
