@@ -557,7 +557,7 @@
             
             <div class="toggles-container">
                 <div class="toggle-container interactive-mode">
-                    <span class="toggle-label" id="interactive-mode-label">Interaktiv modus</span>
+                    <span class="toggle-label" id="interactive-mode-label">Spill</span>
                     <label class="toggle-switch">
                         <input type="checkbox" id="interactive-mode" onchange="toggleInteractiveMode()">
                         <span class="slider"></span>
@@ -581,13 +581,13 @@
         </div>
         <div class="gamification-panel" id="gamification-panel" style="display: none;">
             <div class="points-container">
-                <span class="points-label">Points:</span>
+                <span class="points-label">Poeng:</span>
                 <span class="points-value" id="points-display">0</span>
             </div>
             <div class="streak-container">
-                <span class="streak-label">Streak:</span>
+                <span class="streak-label">På rad:</span>
                 <span class="streak-value" id="streak-display">0</span>
-                <span class="highest-streak" id="highest-streak">(Best: 0)</span>
+                <span class="highest-streak">(Beste: <span id="highest-streak">0</span>)</span>
             </div>
         </div>
         <div class="progress-container" id="progress-container">
@@ -861,7 +861,7 @@
                     currentStreak++;
                     if (currentStreak > highestStreak) {
                         highestStreak = currentStreak;
-                        document.getElementById('highest-streak').textContent = `(Best: ${highestStreak})`;
+                        document.getElementById('highest-streak').textContent = highestStreak;
                     }
                     
                     // Calculate points (base + streak bonus)
@@ -1068,7 +1068,7 @@
             highestStreak = 0;
             document.getElementById('points-display').textContent = '0';
             document.getElementById('streak-display').textContent = '0';
-            document.getElementById('highest-streak').textContent = '(Best: 0)';
+            document.getElementById('highest-streak').textContent = '0';
             
             createMultiplicationTest();
             
