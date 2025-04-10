@@ -3,21 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gangeprøve</title>
+    <title>Matematikkprøve</title>
     <!-- Google Fonts for kid-friendly typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Fredoka+One&display=swap" rel="stylesheet">
     <style>
-        /* Common variables */
+        /* Common variables - Colorblind-Friendly & Engaging Palette */
         :root {
-            --primary-color: #4D96FF;      /* Bright blue */
-            --secondary-color: #6BCB77;    /* Green */
-            --accent-color: #FF6B6B;       /* Coral */
-            --accent-color-2: #FFD93D;     /* Yellow */
-            --background-color: #F4F9F9;   /* Light blue-gray */
+            --primary-color: #007BFF;      /* Vibrant Blue */
+            --secondary-color: #FD7E14;    /* Bright Orange */
+            --accent-color: #DC3545;       /* Red (for incorrect) */
+            --accent-color-2: #FFC107;     /* Amber (for focus/highlight) */
+            --background-color: #F8F9FA;   /* Light Gray */
             --card-color: #FFFFFF;         /* White */
-            --text-color: #333333;         /* Dark gray */
+            --text-color: #212529;         /* Dark Gray */
+            --correct-color: #198754;      /* Dark Green (for correct) */
+            --incorrect-color: #DC3545;    /* Red (already defined as accent) */
         }
         
         /* ============= SCREEN STYLES ============= */
@@ -250,7 +252,7 @@
         
         .answer-input:focus {
             outline: none;
-            border-color: var(--accent-color-2);
+            border-color: var(--accent-color-2); /* Amber focus */
             box-shadow: none;
         }
         
@@ -262,11 +264,11 @@
         }
         
         .correct-answer {
-            color: var(--secondary-color);
+            color: var(--correct-color);
             font-weight: bold;
             position: relative;
-            border-color: var(--secondary-color);
-            background-color: rgba(107, 203, 119, 0.05);
+            border-color: var(--correct-color);
+            background-color: rgba(25, 135, 84, 0.05); /* Light green background */
         }
         
         .correct-answer::before {
@@ -275,11 +277,11 @@
         }
         
         .incorrect-answer {
-            color: var(--accent-color);
+            color: var(--incorrect-color);
             font-weight: bold;
             position: relative;
-            border-color: var(--accent-color);
-            background-color: rgba(255, 107, 107, 0.05);
+            border-color: var(--incorrect-color);
+            background-color: rgba(220, 53, 69, 0.05); /* Light red background */
         }
         
         .incorrect-answer::before {
@@ -296,8 +298,18 @@
         
         .feedback {
             display: inline-block;
-            margin-left: 5px;
+            margin-left: 8px;
+            font-size: 1.2em;
             font-weight: bold;
+        }
+
+        /* Style feedback colors specifically */
+        .correct-answer + .feedback {
+            color: var(--correct-color);
+        }
+
+        .incorrect-answer + .feedback {
+             color: var(--incorrect-color);
         }
         
         .number-selection {
@@ -337,6 +349,54 @@
         .number-selection label:hover {
             transform: translateY(-3px);
             background-color: #FFE566;
+        }
+        
+        .number-selection p,
+        .operation-selection p {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+
+        .number-selection div,
+        .operation-selection div {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px; /* Add some space below the selections */
+        }
+
+        .number-selection label,
+        .operation-selection label {
+            display: flex;
+            align-items: center;
+            background-color: #e9ecef;
+            padding: 5px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .number-selection label:hover,
+        .operation-selection label:hover {
+            background-color: #ced4da;
+        }
+
+        .number-selection input[type="checkbox"],
+        .operation-selection input[type="checkbox"] {
+            display: none; /* Hide default checkbox */
+        }
+
+        .number-selection input[type="checkbox"]:checked + span,
+        .operation-selection input[type="checkbox"]:checked + span {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .number-selection span,
+        .operation-selection span {
+            margin-left: 5px;
+            font-size: 0.95em;
         }
         
         /* Gamification Styles */
@@ -424,7 +484,7 @@
         .progress-bar {
             height: 100%;
             width: 0%; /* Start at 0% */
-            background-color: var(--secondary-color);
+            background-color: var(--secondary-color); /* Orange progress bar */
             border-radius: 5px;
             transition: width 0.4s ease;
         }
@@ -487,7 +547,7 @@
             /* Print-friendly styles for interactive elements */
             .answer-input {
                 border: none;
-                border-bottom: 1px solid #000;
+                border-bottom: 1px solid #000; /* Black bottom border for print */
                 background: transparent;
                 width: 35px;
                 height: 20px;
@@ -528,60 +588,84 @@
         .interactive-mode .answer-input {
             margin-left: 5px;
         }
+        
+        .footer p span {
+            color: var(--secondary-color); /* Orange emphasis in footer */
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
 
-        <h1>Gangeprøve</h1>
+        <h1>Matematikkprøve</h1>
         <div class="controls">
-            <div class="number-selection">
-                <p>Velg hvilke gangetabeller du vil øve på:</p>
+            <div class="operation-selection">
+                <p>Velg regnearter:</p>
                 <div>
                     <label>
-                        <input type="checkbox" name="a_number" value="1" checked onchange="createMultiplicationTest()">
+                        <input type="checkbox" name="operation_type" value="multiply" checked onchange="createMathProblems()">
+                        <span>Multiplikasjon (×)</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="operation_type" value="divide" onchange="createMathProblems()">
+                        <span>Divisjon (÷)</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="operation_type" value="add" onchange="createMathProblems()">
+                        <span>Addisjon (+)</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="operation_type" value="subtract" onchange="createMathProblems()">
+                        <span>Subtraksjon (−)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="number-selection">
+                <p>Velg tallområde (for faktorer/operander):</p>
+                <div>
+                    <label>
+                        <input type="checkbox" name="a_number" value="1" checked onchange="createMathProblems()">
                         <span>1</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="2" checked onchange="createMultiplicationTest()">
+                        <input type="checkbox" name="a_number" value="2" checked onchange="createMathProblems()">
                         <span>2</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="3" checked onchange="createMultiplicationTest()">
+                        <input type="checkbox" name="a_number" value="3" checked onchange="createMathProblems()">
                         <span>3</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="4" checked onchange="createMultiplicationTest()">
+                        <input type="checkbox" name="a_number" value="4" checked onchange="createMathProblems()">
                         <span>4</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="5" checked onchange="createMultiplicationTest()">
+                        <input type="checkbox" name="a_number" value="5" checked onchange="createMathProblems()">
                         <span>5</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="6" checked onchange="createMultiplicationTest()">
+                        <input type="checkbox" name="a_number" value="6" checked onchange="createMathProblems()">
                         <span>6</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="7" checked onchange="createMultiplicationTest()">
+                        <input type="checkbox" name="a_number" value="7" checked onchange="createMathProblems()">
                         <span>7</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="8" checked onchange="createMultiplicationTest()">
+                        <input type="checkbox" name="a_number" value="8" checked onchange="createMathProblems()">
                         <span>8</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="9" checked onchange="createMultiplicationTest()">
+                        <input type="checkbox" name="a_number" value="9" checked onchange="createMathProblems()">
                         <span>9</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="10" checked onchange="createMultiplicationTest()">
+                        <input type="checkbox" name="a_number" value="10" checked onchange="createMathProblems()">
                         <span>10</span>
                     </label>
                 </div>
             </div>
-            
             <div class="toggles-container">
                 <div class="toggle-container">
                     <span class="toggle-label">Sortert rekkefølge</span>
@@ -619,7 +703,7 @@
             <!-- Problems will be generated here via JavaScript -->
         </div>
         <div class="footer">
-            <p>Skriv svarene på linjene. <span style="color: var(--accent-color);">Lykke til! 🚀</span></p>
+            <p>Skriv svarene på linjene. <span style="color: var(--secondary-color);">Lykke til! 🚀</span></p>
         </div>
     </div>
 
@@ -631,65 +715,9 @@
         let currentPoints = 0;
         let currentStreak = 0;
         let highestStreak = 0;
-        
-        // Generate multiplication problems based on selected numbers for 'a'
-        function generateProblems() {
-            // Get all checked number checkboxes
-            const selectedNumbers = [];
-            const checkboxes = document.querySelectorAll('input[name="a_number"]:checked');
-            
-            // If no checkboxes are selected, default to all numbers 1-10
-            if (checkboxes.length === 0) {
-                for (let i = 1; i <= 10; i++) {
-                    selectedNumbers.push(i);
-                }
-            } else {
-                // Add selected numbers to array
-                checkboxes.forEach(checkbox => {
-                    selectedNumbers.push(parseInt(checkbox.value));
-                });
-            }
-            
-            // Generate base problems using only selected numbers for 'a'
-            const baseProblems = [];
-            for (let i of selectedNumbers) {
-                for (let j = 1; j <= 10; j++) {
-                    baseProblems.push({
-                        a: i,
-                        b: j,
-                        result: i * j,
-                        equation: `<span class="number-part">${i}</span><span class="operator">×</span><span class="number-part">${j}</span><span class="operator">=</span>`
-                    });
-                }
-            }
-            
-            // Always ensure we have exactly 100 problems
-            const problems = [];
-            
-            // If we have fewer than 100 base problems, repeat them until we reach 100
-            if (baseProblems.length > 0) {
-                while (problems.length < 100) {
-                    const index = problems.length % baseProblems.length;
-                    problems.push(baseProblems[index]);
-                }
-            } else {
-                // Fallback: If somehow no problems were generated, use 1-10 multiplication
-                for (let count = 0; count < 100; count++) {
-                    const i = (count % 10) + 1;
-                    const j = Math.floor(count / 10) + 1;
-                    problems.push({
-                        a: i,
-                        b: j,
-                        result: i * j,
-                        equation: `<span class="number-part">${i}</span><span class="operator">×</span><span class="number-part">${j}</span><span class="operator">=</span>`
-                    });
-                }
-            }
-            
-            return problems;
-        }
-        
-        // Shuffle an array using Fisher-Yates algorithm
+        const TOTAL_PROBLEMS_COUNT = 100; // Total number of problems to generate
+
+        // Helper function to shuffle an array
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -697,7 +725,120 @@
             }
             return array;
         }
-        
+
+        /**
+         * Generate and distribute math problems based on selected numbers, operations, and total count.
+         * @param {Array<number>} selectedNumbers - Array of numbers selected by the user.
+         * @param {Array<string>} selectedOperations - Array of operation types ('add', 'subtract', 'multiply', 'divide').
+         * @param {number} totalCount - The total number of problems to generate.
+         * @returns {Array<Object>} - An array of distributed problem objects.
+         */
+        function generateDistributedProblems(selectedNumbers, selectedOperations, totalCount) {
+            const allPossibleProblems = [];
+
+            // Generate all possible problems for the selections
+            for (let i of selectedNumbers) {
+                for (let j = 1; j <= 10; j++) { // Second operand range 1-10
+                    for (let operation of selectedOperations) {
+                        let problem = null;
+                        switch (operation) {
+                            case 'multiply':
+                                problem = {
+                                    a: i, b: j, result: i * j,
+                                    equation: `<span class="number-part">${i}</span><span class="operator">×</span><span class="number-part">${j}</span><span class="operator">=</span>`,
+                                    operationType: 'multiply'
+                                };
+                                break;
+                            case 'divide':
+                                // Ensure integer division: generate as k / j = i where k = i * j
+                                // Also ensures divisor j is not 0 (since j starts at 1)
+                                const k = i * j;
+                                problem = {
+                                    a: k, b: j, result: i,
+                                    equation: `<span class="number-part">${k}</span><span class="operator">÷</span><span class="number-part">${j}</span><span class="operator">=</span>`,
+                                    operationType: 'divide'
+                                };
+                                break;
+                            case 'add':
+                                problem = {
+                                    a: i, b: j, result: i + j,
+                                    equation: `<span class="number-part">${i}</span><span class="operator">+</span><span class="number-part">${j}</span><span class="operator">=</span>`,
+                                    operationType: 'add'
+                                };
+                                break;
+                            case 'subtract':
+                                // Ensure non-negative result: use max(i,j) - min(i,j)
+                                const num1 = Math.max(i, j);
+                                const num2 = Math.min(i, j);
+                                problem = {
+                                    a: num1, b: num2, result: num1 - num2,
+                                    equation: `<span class="number-part">${num1}</span><span class="operator">−</span><span class="number-part">${num2}</span><span class="operator">=</span>`,
+                                    operationType: 'subtract'
+                                };
+                                break;
+                        }
+                        if (problem) {
+                            allPossibleProblems.push(problem);
+                        }
+                    }
+                }
+            }
+
+            // --- Start Distribution Logic ---
+            const distributedProblems = [];
+            const numOperations = selectedOperations.length;
+
+            if (numOperations === 0 || allPossibleProblems.length === 0) {
+                // Handle edge case: No operations selected or no possible problems generated
+                // (e.g., if numbers 1-10 were somehow unselectable and none were checked)
+                // Optionally, return a default set or an empty array
+                console.warn("Cannot generate problems: No operations selected or no possible problems found.");
+                 // Fallback: Generate 100 default multiplication problems (1x1 to 10x10)
+                 for (let count = 0; count < totalCount; count++) {
+                     const i = (count % 10) + 1;
+                     const j = Math.floor(count / 10) + 1;
+                     distributedProblems.push({
+                         a: i, b: j, result: i * j,
+                         equation: `<span class="number-part">${i}</span><span class="operator">×</span><span class="number-part">${j}</span><span class="operator">=</span>`,
+                         operationType: 'multiply' // Mark as multiply for consistency
+                     });
+                 }
+                 return shuffleArray(distributedProblems); // Shuffle the fallback set
+            }
+
+            // Calculate target counts per operation
+            const baseCount = Math.floor(totalCount / numOperations);
+            let remainder = totalCount % numOperations;
+            const counts = {};
+            selectedOperations.forEach(op => counts[op] = baseCount);
+            for (let i = 0; i < remainder; i++) {
+                counts[selectedOperations[i]]++;
+            }
+
+            // Select problems for each operation type, allowing repetition
+            selectedOperations.forEach(op => {
+                // Filter the unique problems available for this operation type
+                const problemsForOp = allPossibleProblems.filter(p => p.operationType === op);
+
+                if (problemsForOp.length > 0) {
+                    // Add the required number of problems for this operation, repeating if necessary
+                    for (let i = 0; i < counts[op]; i++) {
+                        // Use modulo to cycle through available problems for this type
+                        distributedProblems.push(problemsForOp[i % problemsForOp.length]);
+                    }
+                } else {
+                    // This should ideally not happen if allPossibleProblems.length > 0 initially,
+                    // but handle it just in case.
+                    console.warn(`No problems found for operation type: ${op}. Skipping.`);
+                }
+            });
+
+            // --- End Distribution Logic ---
+
+            // Final shuffle to mix operations
+            return shuffleArray(distributedProblems);
+        }
+
         /**
          * Process problems layout (column-first vs random)
          */
@@ -748,25 +889,7 @@
             
             return finalProblems;
         }
-        
-        /**
-         * Update problems when checkboxes are toggled
-         */
-        function createMultiplicationTest() {
-            // Generate base problems
-            const problems = generateProblems();
-            
-            // Check ordering preference - toggle is now checked for sorted, unchecked for random
-            const isSorted = document.getElementById('order-toggle').checked;
-            const isRandom = !isSorted;
-            
-            // Process problems layout based on ordering preference
-            const finalProblems = processProblemsLayout(problems, isRandom);
-            
-            // Display problems using shared function
-            displayProblems(finalProblems);
-        }
-        
+
         /**
          * Creates an interactive problem with input field and feedback
          * @param {HTMLElement} container - The container element for the problem
@@ -818,7 +941,7 @@
                 });
             }, 0);
         }
-        
+
         /**
          * Validates and checks if an answer is correct
          * @param {string} inputId - The ID of the input element to check
@@ -846,7 +969,7 @@
                 checkNumericAnswer(input, feedback, trimmedValue);
             }
         }
-        
+
         /**
          * Reset input to default state
          */
@@ -854,7 +977,7 @@
             input.className = 'answer-input';
             feedback.textContent = '';
         }
-        
+
         /**
          * Mark input as invalid (non-numeric)
          */
@@ -863,7 +986,7 @@
             feedback.textContent = '!';
             feedback.style.color = 'orange';
         }
-        
+
         /**
          * Check if numeric answer is correct
          */
@@ -918,7 +1041,7 @@
                 }
             }
         }
-        
+
         /**
          * Display problems based on current settings
          */
@@ -957,7 +1080,53 @@
                 problemsList.appendChild(div);
             }
         }
-        
+
+        /**
+         * Creates the math problems based on user selections.
+         */
+        function createMathProblems() {
+            // Get selected numbers
+            const selectedNumbers = [];
+            const numberCheckboxes = document.querySelectorAll('input[name="a_number"]:checked');
+            if (numberCheckboxes.length === 0) {
+                 // Default to 1-10 if none selected?
+                 for(let i=1; i<=10; i++) selectedNumbers.push(i);
+                 // Maybe check the boxes visually too?
+                 document.querySelectorAll('input[name="a_number"]').forEach(cb => cb.checked = true);
+            } else {
+                numberCheckboxes.forEach(checkbox => {
+                    selectedNumbers.push(parseInt(checkbox.value));
+                });
+            }
+
+            // Get selected operations
+            const selectedOperations = [];
+            const operationCheckboxes = document.querySelectorAll('input[name="operation_type"]:checked');
+            if (operationCheckboxes.length === 0) {
+                // Default to multiplication if none selected
+                selectedOperations.push('multiply');
+                // Check the multiplication box visually
+                 const multiplyCheckbox = document.querySelector('input[name="operation_type"][value="multiply"]');
+                 if (multiplyCheckbox) multiplyCheckbox.checked = true;
+            } else {
+                operationCheckboxes.forEach(checkbox => {
+                    selectedOperations.push(checkbox.value);
+                });
+            }
+
+            // Generate distributed problems
+            const problems = generateDistributedProblems(selectedNumbers, selectedOperations, TOTAL_PROBLEMS_COUNT);
+
+            // Get sorting preference
+            const isRandom = !document.getElementById('order-toggle').checked;
+
+            // Process layout (sorting/shuffling)
+            const finalProblems = processProblemsLayout(problems, isRandom);
+
+            // Display problems
+            displayProblems(finalProblems);
+        }
+
         /**
          * Toggle answers visibility without regenerating the test
          */
@@ -991,6 +1160,7 @@
                 // Reset gamification values
                 currentPoints = 0;
                 currentStreak = 0;
+                highestStreak = 0;
                 document.getElementById('points-display').textContent = '0';
                 document.getElementById('streak-display').textContent = '0';
             } else {
@@ -1014,7 +1184,7 @@
                 updateProgressBar();
             }
         }
-        
+
         /**
          * Toggle between sequential and random order
          */
@@ -1031,19 +1201,19 @@
             }
             
             // Regenerate problems with new order
-            const problems = generateProblems();
-            
-            // Process problems layout based on ordering preference
-            // isSorted is true when toggle is checked, but we want random when unchecked
-            const isRandom = !isSorted;
-            const finalProblems = processProblemsLayout(problems, isRandom);
-            
+            const problems = generateDistributedProblems(
+                Array.from(document.querySelectorAll('input[name="a_number"]:checked')).map(cb => parseInt(cb.value)),
+                Array.from(document.querySelectorAll('input[name="operation_type"]:checked')).map(cb => cb.value),
+                TOTAL_PROBLEMS_COUNT
+            );
+
+            // Process layout (sorting/shuffling)
+            const finalProblems = processProblemsLayout(problems, !isSorted);
+
             // Display problems using shared function
             displayProblems(finalProblems);
         }
-        
-        // Interactive mode is always enabled, so this function is no longer needed
-        
+
         /**
          * Updates the progress when a user fills in an answer and leaves the field
          * @param {Event} event - The blur event
@@ -1062,7 +1232,7 @@
                 updateProgressBar();
             }
         }
-        
+
         /**
          * Updates the progress bar width based on answered problems
          */
@@ -1077,7 +1247,7 @@
                 console.log('Progress: 0/0 (0%)');
             }
         }
-        
+
         // Run the test creation when the page loads
         window.onload = function() {
             // Reset gamification elements
@@ -1088,7 +1258,7 @@
             document.getElementById('streak-display').textContent = '0';
             document.getElementById('highest-streak').textContent = '0';
             
-            createMultiplicationTest();
+            createMathProblems();
             
             // Set initial toggle styling
             const isSorted = document.getElementById('order-toggle').checked;
