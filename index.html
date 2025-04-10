@@ -124,6 +124,70 @@
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
         }
         
+        /* Center the operation and number selection buttons */
+        .operation-selection > div,
+        .number-selection > div {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 0 auto;
+        }
+        
+        /* Colorful and engaging buttons for operations and numbers */
+        .operation-selection label,
+        .number-selection label {
+            background: white;
+            border-radius: 25px;
+            padding: 8px 15px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+        
+        /* Operation buttons with different colors */
+        .operation-selection label:nth-child(1) {
+            background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+            border-color: #4dd0e1;
+        }
+        
+        .operation-selection label:nth-child(2) {
+            background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+            border-color: #ba68c8;
+        }
+        
+        .operation-selection label:nth-child(3) {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            border-color: #66bb6a;
+        }
+        
+        .operation-selection label:nth-child(4) {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            border-color: #ffa726;
+        }
+        
+        /* Number buttons with a gradient of blues */
+        .number-selection label {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border-color: #64b5f6;
+        }
+        
+        /* Hover effects */
+        .operation-selection label:hover,
+        .number-selection label:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Checked state */
+        .operation-selection input[type="checkbox"]:checked + span::before,
+        .number-selection input[type="checkbox"]:checked + span::before {
+            content: "✓";
+            margin-right: 5px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
         .controls label {
             margin-right: 15px;
             font-size: 12pt;
@@ -1180,10 +1244,16 @@
                     input.value = correctAnswer;
                     input.readOnly = true;
                     
+                    // Reset any correct/incorrect styling
+                    input.className = 'answer-input';
+                    
                     // Clear any existing feedback
                     const feedbackId = input.id.replace('answer', 'feedback');
                     const feedback = document.getElementById(feedbackId);
-                    if (feedback) feedback.textContent = '';
+                    if (feedback) {
+                        feedback.textContent = '';
+                        feedback.style.color = ''; // Reset color
+                    }
                 });
                 
                 // Hide gamification elements
