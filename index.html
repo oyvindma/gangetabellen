@@ -1221,6 +1221,19 @@
                     selectedOperations.push(checkbox.value);
                 });
             }
+            
+            // Reset gamification values when controls are changed
+            currentPoints = 0;
+            currentStreak = 0;
+            highestStreak = 0;
+            document.getElementById('points-display').textContent = '0';
+            document.getElementById('streak-display').textContent = '0';
+            document.getElementById('highest-streak').textContent = '0';
+            
+            // Reset progress tracking
+            answeredProblems = 0;
+            answeredIndices.clear();
+            updateProgressBar();
 
             // Generate distributed problems
             const problems = generateDistributedProblems(selectedNumbers, selectedOperations, TOTAL_PROBLEMS_COUNT);
