@@ -234,6 +234,39 @@
             margin-top: 15px;
         }
         
+        /* Problem layout styles */
+        .problems-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .problem-container {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .problem-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .problem-container label {
+            margin-right: 8px;
+            font-weight: 500;
+        }
+        
+        .problem-container .feedback {
+            margin-left: 8px;
+            font-weight: bold;
+        }
+        
         /* Styles for interactive mode */
         .answer-input {
             width: 45px;
@@ -1072,7 +1105,7 @@
             for (let i = 0; i < problems.length; i++) {
                 const problem = problems[i];
                 const div = document.createElement('div');
-                div.className = 'problem';
+                div.className = 'problem-container';
                 
                 // Always use interactive mode
                 createInteractiveProblem(div, problem, i);
