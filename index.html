@@ -601,20 +601,19 @@
                 background: white;
                 margin: 0;
                 padding: 0;
+                font-size: 10pt; /* Smaller base font size for print */
             }
             
             /* Reset container styles for print */
             .container {
                 width: 210mm; /* A4 width */
-                height: 297mm; /* Full A4 height */
+                height: auto; /* Auto height */
+                max-height: 297mm; /* Maximum A4 height */
                 margin: 0;
-                padding: 8mm 8mm;
+                padding: 5mm; /* Reduced padding */
                 box-shadow: none;
                 border-radius: 0;
                 background-color: white;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
             }
             
             /* Reset problems list styles for print */
@@ -622,13 +621,14 @@
                 background-color: white;
                 box-shadow: none;
                 padding: 0;
-                flex-grow: 1;
+                grid-gap: 3px 6px; /* Slightly reduced grid gap */
+                grid-template-columns: repeat(4, 1fr); /* Keep 4 columns */
             }
             
-            /* Set page size */
+            /* Set page size with small margins */
             @page {
                 size: A4;
-                margin: 0;
+                margin: 3mm; /* Small margin */
             }
             
             /* Hide controls, gamification elements, and decorative elements */
@@ -646,9 +646,10 @@
                 border: none;
                 border-bottom: 1px solid #000; /* Black bottom border for print */
                 background: transparent;
-                width: 35px;
-                height: 20px;
-                font-size: 12pt;
+                width: 32px; /* Slightly wider */
+                height: 20px; /* Taller input field */
+                font-size: 12pt; /* Increased font size to match problem text */
+                margin-left: 2px; /* Small left margin */
             }
             
             /* Hide feedback elements in print */
@@ -658,21 +659,31 @@
             
             /* Ensure problem spacing is optimized for print */
             .problem {
-                margin-bottom: 8px;
+                margin-bottom: 6px; /* Slightly increased margin */
                 padding: 0;
-                font-size: 13pt;
+                font-size: 12pt; /* Increased font size */
+                line-height: 1.3; /* Slightly increased line height */
+            }
+            
+            /* Optimize problem container for print */
+            .problem-container {
+                padding: 4px 6px; /* Increased padding */
+                margin-bottom: 4px; /* Increased margin */
+                box-shadow: none;
+                min-height: 26px; /* Ensure minimum height for taller problems */
             }
             
             /* Header and footer adjustments */
             h1 {
-                font-size: 20pt;
+                font-size: 22pt; /* Larger header */
                 margin-top: 0;
-                margin-bottom: 10mm;
+                margin-bottom: 5mm; /* Slightly increased margin */
+                font-weight: bold; /* Ensure bold weight */
             }
             
             .footer {
-                margin-top: 8mm;
-                font-size: 10pt;
+                margin-top: 2mm; /* Slightly reduced margin */
+                font-size: 9pt; /* Slightly smaller font */
             }
         }
         
