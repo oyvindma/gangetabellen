@@ -853,6 +853,111 @@
         .footer p span {
             color: var(--secondary-color); /* Orange emphasis in footer */
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: var(--card-color);
+            margin: auto;
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-button {
+            position: absolute;
+            top: var(--spacing-sm);
+            right: var(--spacing-md);
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        .close-button:hover {
+            color: var(--accent-color);
+        }
+
+        .modal h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: var(--spacing-lg);
+            font-family: 'Fredoka One', cursive;
+        }
+
+        .summary-stats {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background-color: var(--background-color);
+            border-radius: var(--radius-md);
+        }
+
+        .summary-label {
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .summary-value {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        .restart-button {
+            display: block;
+            width: 100%;
+            padding: var(--spacing-md);
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: 'Nunito', sans-serif;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .restart-button:hover {
+            background-color: #e06c00;
+        }
     </style>
 </head>
 <body>
@@ -971,6 +1076,33 @@
         <div class="footer">
             <p>Skriv svarene på linjene. <span style="color: var(--secondary-color);">Lykke til! 🚀</span></p>
         </div>
+
+        <!-- Summary Modal -->
+        <div id="summary-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <h2>Oppsummering</h2>
+                <div class="summary-stats">
+                    <div class="summary-item">
+                        <span class="summary-label">Total poengsum:</span>
+                        <span id="summary-points" class="summary-value">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Tid brukt:</span>
+                        <span id="summary-time" class="summary-value">0 minutter</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Riktige svar:</span>
+                        <span id="summary-correct" class="summary-value">0 av 0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Høyeste streak:</span>
+                        <span id="summary-streak" class="summary-value">0</span>
+                    </div>
+                </div>
+                <button id="restart-button" class="restart-button">Start på nytt</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -982,6 +1114,10 @@
         let currentStreak = 0;
         let highestStreak = 0;
         const TOTAL_PROBLEMS_COUNT = 100; // Total number of problems to generate
+
+        // Variables for timing and summary
+        let startTime = null;
+        let endTime = null;
 
         // Helper function to shuffle an array
         function shuffleArray(array) {
@@ -1190,6 +1326,15 @@
                             const nextInput = document.getElementById(`answer-${index+1}`);
                             if (nextInput) nextInput.focus();
                         }
+                    }
+                });
+
+                // Set start time when user focuses on any problem
+                input.addEventListener('focus', function() {
+                    // Record start time on first focus if not already set
+                    if (startTime === null) {
+                        startTime = new Date();
+                        console.log('First problem focus at:', startTime);
                     }
                 });
 
@@ -1516,6 +1661,12 @@
             const input = event.target;
             if (!input.value || input.value.trim() === '') return; // Only count if field has content
 
+            // Record start time on first answer attempt if not already set
+            if (startTime === null) {
+                startTime = new Date();
+                console.log('First answer attempt at:', startTime);
+            }
+
             const index = parseInt(input.dataset.index);
 
             // Only count each problem once
@@ -1575,10 +1726,107 @@
                 const percentage = (answeredProblems / totalProblems) * 100;
                 progressBar.style.width = percentage + '%';
                 console.log(`Progress: ${answeredProblems}/${totalProblems} (${percentage.toFixed(1)}%)`);
+
+                // Check if all problems are answered
+                if (answeredProblems === totalProblems) {
+                    // Record end time
+                    endTime = new Date();
+                    console.log('All problems completed at:', endTime);
+
+                    // Show summary modal
+                    showSummaryModal();
+                }
             } else {
                 progressBar.style.width = '0%';
                 console.log('Progress: 0/0 (0%)');
             }
+        }
+
+        /**
+         * Counts the number of correct answers
+         * @returns {number} The number of correct answers
+         */
+        function countCorrectAnswers() {
+            const inputs = document.querySelectorAll('.answer-input');
+            let correctCount = 0;
+
+            inputs.forEach(input => {
+                if (input.className.includes('correct-answer')) {
+                    correctCount++;
+                }
+            });
+
+            return correctCount;
+        }
+
+        /**
+         * Calculates the time spent in minutes and seconds
+         * @returns {string} Formatted time string
+         */
+        function calculateTimeSpent() {
+            if (!startTime || !endTime) return '0 minutter';
+
+            const timeSpentMs = endTime - startTime;
+            const minutes = Math.floor(timeSpentMs / 60000);
+            const seconds = Math.floor((timeSpentMs % 60000) / 1000);
+
+            if (minutes === 0) {
+                return `${seconds} sekunder`;
+            } else if (seconds === 0) {
+                return `${minutes} minutter`;
+            } else {
+                return `${minutes} minutter og ${seconds} sekunder`;
+            }
+        }
+
+        /**
+         * Shows the summary modal with statistics
+         */
+        function showSummaryModal() {
+            // Calculate statistics
+            const correctAnswers = countCorrectAnswers();
+            const timeSpent = calculateTimeSpent();
+
+            // Update modal content
+            document.getElementById('summary-points').textContent = currentPoints;
+            document.getElementById('summary-time').textContent = timeSpent;
+            document.getElementById('summary-correct').textContent = `${correctAnswers} av ${totalProblems}`;
+            document.getElementById('summary-streak').textContent = highestStreak;
+
+            // Show modal
+            const modal = document.getElementById('summary-modal');
+            modal.style.display = 'flex';
+        }
+
+        /**
+         * Closes the summary modal
+         */
+        function closeSummaryModal() {
+            const modal = document.getElementById('summary-modal');
+            modal.style.display = 'none';
+        }
+
+        /**
+         * Restarts the game
+         */
+        function restartGame() {
+            // Reset variables
+            startTime = null;
+            endTime = null;
+            answeredProblems = 0;
+            answeredIndices.clear();
+            currentPoints = 0;
+            currentStreak = 0;
+
+            // Update displays
+            document.getElementById('points-display').textContent = '0';
+            document.getElementById('streak-display').textContent = '0';
+
+            // Close modal
+            closeSummaryModal();
+
+            // Generate new problems
+            createMathProblems();
         }
 
         // Run the test creation when the page loads
@@ -1590,6 +1838,10 @@
             document.getElementById('points-display').textContent = '0';
             document.getElementById('streak-display').textContent = '0';
             document.getElementById('highest-streak').textContent = '0';
+
+            // Add event listeners for modal buttons
+            document.querySelector('.close-button').addEventListener('click', closeSummaryModal);
+            document.getElementById('restart-button').addEventListener('click', restartGame);
 
             createMathProblems();
 
