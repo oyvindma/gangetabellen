@@ -880,6 +880,29 @@
             animation: modalFadeIn 0.3s ease-out;
         }
 
+        .practice-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+        }
+
+        .practice-button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        .practice-button:hover {
+            background-color: #e67300;
+            transform: translateY(-2px);
+        }
+
         @keyframes modalFadeIn {
             from {
                 opacity: 0;
@@ -1100,7 +1123,11 @@
                         <span id="summary-streak" class="summary-value">0</span>
                     </div>
                 </div>
-                <button id="restart-button" class="restart-button">Start på nytt</button>
+                <div class="practice-buttons">
+                    <button id="restart-button" class="restart-button">Start på nytt</button>
+                    <button id="practice-incorrect-button" class="practice-button">Øv på feil svar</button>
+                    <button id="practice-slower-button" class="practice-button">Øv på tregere svar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1118,6 +1145,12 @@
         // Variables for timing and summary
         let startTime = null;
         let endTime = null;
+
+        // Variables for tracking time spent on each question
+        let questionStartTimes = {}; // Maps question index to start time
+        let questionEndTimes = {}; // Maps question index to end time
+        let questionTimesSpent = {}; // Maps question index to time spent in milliseconds
+        let incorrectQuestions = []; // Array of indices of incorrectly answered questions
 
         // Helper function to shuffle an array
         function shuffleArray(array) {
@@ -1336,6 +1369,13 @@
                         startTime = new Date();
                         console.log('First problem focus at:', startTime);
                     }
+
+                    // Record start time for this specific question
+                    const questionIndex = parseInt(this.dataset.index);
+                    if (!questionStartTimes[questionIndex]) {
+                        questionStartTimes[questionIndex] = new Date();
+                        console.log(`Question ${questionIndex} focus at:`, questionStartTimes[questionIndex]);
+                    }
                 });
 
                 // Also check on blur (when input loses focus)
@@ -1364,6 +1404,7 @@
         function checkAnswer(inputId) {
             const input = document.getElementById(inputId);
             const feedback = document.getElementById('feedback-' + inputId.split('-')[1]);
+            const questionIndex = parseInt(input.dataset.index);
 
             // Keep the original value (don't clear it)
             const originalValue = input.value;
@@ -1375,13 +1416,23 @@
                 input.value = trimmedValue;
             }
 
+            // Record end time for this question if it has a start time and hasn't been recorded yet
+            if (questionStartTimes[questionIndex] && !questionEndTimes[questionIndex] && trimmedValue !== '') {
+                questionEndTimes[questionIndex] = new Date();
+
+                // Calculate time spent on this question
+                const timeSpent = questionEndTimes[questionIndex] - questionStartTimes[questionIndex];
+                questionTimesSpent[questionIndex] = timeSpent;
+                console.log(`Question ${questionIndex} completed in ${timeSpent}ms`);
+            }
+
             // Handle different input cases
             if (trimmedValue === '') {
                 resetInputState(input, feedback);
             } else if (!/^\d+$/.test(trimmedValue)) {
                 markAsInvalid(input, feedback);
             } else {
-                checkNumericAnswer(input, feedback, trimmedValue);
+                checkNumericAnswer(input, feedback, trimmedValue, questionIndex);
             }
         }
 
@@ -1404,8 +1455,12 @@
 
         /**
          * Check if numeric answer is correct
+         * @param {HTMLElement} input - The input element
+         * @param {HTMLElement} feedback - The feedback element
+         * @param {string} value - The user's answer
+         * @param {number} questionIndex - The index of the question
          */
-        function checkNumericAnswer(input, feedback, value) {
+        function checkNumericAnswer(input, feedback, value, questionIndex) {
             const userAnswer = parseInt(value);
             const correctAnswer = parseInt(input.dataset.correct);
             const wasAlreadyCorrect = input.className.includes('correct-answer');
@@ -1414,6 +1469,12 @@
                 input.className = 'answer-input correct-answer';
                 feedback.textContent = '✓';
                 feedback.style.color = 'green';
+
+                // Remove from incorrectQuestions if it was previously incorrect
+                const incorrectIndex = incorrectQuestions.indexOf(questionIndex);
+                if (incorrectIndex !== -1) {
+                    incorrectQuestions.splice(incorrectIndex, 1);
+                }
 
                 // Only award points if this is the first time getting it correct
                 if (!wasAlreadyCorrect) {
@@ -1448,6 +1509,11 @@
                 input.className = 'answer-input incorrect-answer';
                 feedback.textContent = '✗';
                 feedback.style.color = 'red';
+
+                // Add to incorrectQuestions if not already there
+                if (!incorrectQuestions.includes(questionIndex)) {
+                    incorrectQuestions.push(questionIndex);
+                }
 
                 // Reset streak on wrong answer
                 if (currentStreak > 0) {
@@ -1780,12 +1846,51 @@
         }
 
         /**
+         * Identifies questions that took longer time than others
+         * @returns {Array<number>} Array of indices of questions that took longer time
+         */
+        function identifySlowerQuestions() {
+            // Get all question times
+            const times = Object.values(questionTimesSpent);
+            if (times.length === 0) return [];
+
+            // Calculate mean
+            const mean = times.reduce((sum, time) => sum + time, 0) / times.length;
+
+            // Calculate standard deviation
+            const squaredDiffs = times.map(time => Math.pow(time - mean, 2));
+            const variance = squaredDiffs.reduce((sum, diff) => sum + diff, 0) / times.length;
+            const stdDev = Math.sqrt(variance);
+
+            console.log(`Mean time: ${mean}ms, Standard deviation: ${stdDev}ms`);
+
+            // Identify questions that took longer than mean + 0.5 standard deviation
+            const threshold = mean + (0.5 * stdDev);
+            const slowerQuestions = [];
+
+            for (const [index, time] of Object.entries(questionTimesSpent)) {
+                if (time > threshold) {
+                    slowerQuestions.push(parseInt(index));
+                }
+            }
+
+            console.log(`Identified ${slowerQuestions.length} slower questions:`, slowerQuestions);
+            return slowerQuestions;
+        }
+
+        /**
          * Shows the summary modal with statistics
          */
         function showSummaryModal() {
             // Calculate statistics
             const correctAnswers = countCorrectAnswers();
             const timeSpent = calculateTimeSpent();
+            const slowerQuestions = identifySlowerQuestions();
+
+            // Set end time if not already set
+            if (!endTime) {
+                endTime = new Date();
+            }
 
             // Update modal content
             document.getElementById('summary-points').textContent = currentPoints;
@@ -1817,6 +1922,10 @@
             answeredIndices.clear();
             currentPoints = 0;
             currentStreak = 0;
+            questionStartTimes = {};
+            questionEndTimes = {};
+            questionTimesSpent = {};
+            incorrectQuestions = [];
 
             // Update displays
             document.getElementById('points-display').textContent = '0';
@@ -1827,6 +1936,94 @@
 
             // Generate new problems
             createMathProblems();
+        }
+
+        /**
+         * Regenerates problems based on incorrect answers
+         */
+        function practiceIncorrectQuestions() {
+            if (incorrectQuestions.length === 0) {
+                alert('Du har ingen feil svar å øve på!');
+                return;
+            }
+
+            // Get the original problems
+            const problems = window.problemsData;
+            if (!problems || problems.length === 0) {
+                alert('Ingen problemer å øve på!');
+                return;
+            }
+
+            // Filter problems to only include incorrect ones
+            const incorrectProblems = [];
+            for (const index of incorrectQuestions) {
+                if (index < problems.length) {
+                    incorrectProblems.push(problems[index]);
+                }
+            }
+
+            // Reset variables
+            startTime = null;
+            endTime = null;
+            answeredProblems = 0;
+            answeredIndices.clear();
+            currentPoints = 0;
+            currentStreak = 0;
+            questionStartTimes = {};
+            questionEndTimes = {};
+            questionTimesSpent = {};
+            incorrectQuestions = [];
+
+            // Close modal
+            closeSummaryModal();
+
+            // Display only the incorrect problems
+            displayProblems(incorrectProblems);
+        }
+
+        /**
+         * Regenerates problems based on questions that took longer time
+         */
+        function practiceSlowerQuestions() {
+            const slowerQuestions = identifySlowerQuestions();
+
+            if (slowerQuestions.length === 0) {
+                alert('Du har ingen tregere svar å øve på!');
+                return;
+            }
+
+            // Get the original problems
+            const problems = window.problemsData;
+            if (!problems || problems.length === 0) {
+                alert('Ingen problemer å øve på!');
+                return;
+            }
+
+            // Filter problems to only include slower ones
+            const slowerProblems = [];
+            for (const index of slowerQuestions) {
+                if (index < problems.length) {
+                    slowerProblems.push(problems[index]);
+                }
+            }
+
+            // Reset variables
+            startTime = null;
+            endTime = null;
+            answeredProblems = 0;
+            answeredIndices.clear();
+            currentPoints = 0;
+            currentStreak = 0;
+            questionStartTimes = {};
+            questionEndTimes = {};
+            questionTimesSpent = {};
+            incorrectQuestions = [];
+
+            // Close modal
+            closeSummaryModal();
+
+            // Display only the slower problems
+            displayProblems(slowerProblems);
         }
 
         // Run the test creation when the page loads
@@ -1842,6 +2039,8 @@
             // Add event listeners for modal buttons
             document.querySelector('.close-button').addEventListener('click', closeSummaryModal);
             document.getElementById('restart-button').addEventListener('click', restartGame);
+            document.getElementById('practice-incorrect-button').addEventListener('click', practiceIncorrectQuestions);
+            document.getElementById('practice-slower-button').addEventListener('click', practiceSlowerQuestions);
 
             createMathProblems();
 
