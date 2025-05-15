@@ -1124,9 +1124,8 @@
                     </div>
                 </div>
                 <div class="practice-buttons">
-                    <button id="restart-button" class="restart-button">Start på nytt</button>
-                    <button id="practice-incorrect-button" class="practice-button">Øv på feil svar</button>
-                    <button id="practice-slower-button" class="practice-button">Øv på tregere svar</button>
+                    <button id="restart-button" class="restart-button">Prøv igjen</button>
+                    <button id="practice-combined-button" class="practice-button">Øv på feil og tregere svar</button>
                 </div>
             </div>
         </div>
@@ -1440,7 +1439,7 @@
          * Reset input to default state
          */
         function resetInputState(input, feedback) {
-            input.className = 'answer-input';
+            input.classList.remove('correct-answer', 'incorrect-answer', 'invalid-answer');
             feedback.textContent = '';
         }
 
@@ -1448,7 +1447,8 @@
          * Mark input as invalid (non-numeric)
          */
         function markAsInvalid(input, feedback) {
-            input.className = 'answer-input invalid-answer';
+            input.classList.remove('correct-answer', 'incorrect-answer');
+            input.classList.add('invalid-answer');
             feedback.textContent = '!';
             feedback.style.color = 'orange';
         }
@@ -1463,10 +1463,11 @@
         function checkNumericAnswer(input, feedback, value, questionIndex) {
             const userAnswer = parseInt(value);
             const correctAnswer = parseInt(input.dataset.correct);
-            const wasAlreadyCorrect = input.className.includes('correct-answer');
+            const wasAlreadyCorrect = input.classList.contains('correct-answer');
 
             if (userAnswer === correctAnswer) {
-                input.className = 'answer-input correct-answer';
+                input.classList.remove('incorrect-answer');
+                input.classList.add('correct-answer');
                 feedback.textContent = '✓';
                 feedback.style.color = 'green';
 
@@ -1506,7 +1507,8 @@
                     pointsDisplay.classList.add('points-increase');
                 }
             } else {
-                input.className = 'answer-input incorrect-answer';
+                input.classList.remove('correct-answer');
+                input.classList.add('incorrect-answer');
                 feedback.textContent = '✗';
                 feedback.style.color = 'red';
 
@@ -1817,7 +1819,7 @@
             let correctCount = 0;
 
             inputs.forEach(input => {
-                if (input.className.includes('correct-answer')) {
+                if (input.classList.contains('correct-answer')) {
                     correctCount++;
                 }
             });
@@ -1912,7 +1914,7 @@
         }
 
         /**
-         * Restarts the game
+         * Restarts the game with the same questions
          */
         function restartGame() {
             // Reset variables
@@ -1922,6 +1924,7 @@
             answeredIndices.clear();
             currentPoints = 0;
             currentStreak = 0;
+            highestStreak = 0;
             questionStartTimes = {};
             questionEndTimes = {};
             questionTimesSpent = {};
@@ -1930,12 +1933,18 @@
             // Update displays
             document.getElementById('points-display').textContent = '0';
             document.getElementById('streak-display').textContent = '0';
+            document.getElementById('highest-streak').textContent = '0';
 
             // Close modal
             closeSummaryModal();
 
-            // Generate new problems
-            createMathProblems();
+            // Display the same problems again
+            if (window.problemsData && window.problemsData.length > 0) {
+                displayProblems(window.problemsData);
+            } else {
+                // Fallback to creating new problems if no existing problems data
+                createMathProblems();
+            }
         }
 
         /**
@@ -2026,6 +2035,68 @@
             displayProblems(slowerProblems);
         }
 
+        /**
+         * Regenerates problems based on both incorrect and slower questions
+         * Repeats problems to reach a total of 100 questions if needed
+         */
+        function practiceCombinedQuestions() {
+            const slowerQuestions = identifySlowerQuestions();
+
+            // Get the original problems
+            const problems = window.problemsData;
+            if (!problems || problems.length === 0) {
+                alert('Ingen problemer å øve på!');
+                return;
+            }
+
+            // Combine incorrect and slower questions
+            const combinedIndices = new Set([...incorrectQuestions, ...slowerQuestions]);
+
+            if (combinedIndices.size === 0) {
+                alert('Du har ingen feil eller tregere svar å øve på!');
+                return;
+            }
+
+            // Filter problems to include both incorrect and slower ones
+            const combinedProblems = [];
+            for (const index of combinedIndices) {
+                if (index < problems.length) {
+                    combinedProblems.push(problems[index]);
+                }
+            }
+
+            // Repeat problems to reach a total of 100 questions if needed
+            const repeatedProblems = [];
+            while (repeatedProblems.length < TOTAL_PROBLEMS_COUNT) {
+                // Add all combined problems
+                repeatedProblems.push(...combinedProblems);
+
+                // If we've added too many, trim the excess
+                if (repeatedProblems.length > TOTAL_PROBLEMS_COUNT) {
+                    repeatedProblems.length = TOTAL_PROBLEMS_COUNT;
+                }
+            }
+
+            // Reset variables
+            startTime = null;
+            endTime = null;
+            answeredProblems = 0;
+            answeredIndices.clear();
+            currentPoints = 0;
+            currentStreak = 0;
+            questionStartTimes = {};
+            questionEndTimes = {};
+            questionTimesSpent = {};
+            incorrectQuestions = [];
+
+            // Close modal
+            closeSummaryModal();
+
+            // Display the combined and repeated problems
+            displayProblems(repeatedProblems);
+        }
+
+
         // Run the test creation when the page loads
         window.onload = function() {
             // Reset gamification elements
@@ -2039,8 +2110,7 @@
             // Add event listeners for modal buttons
             document.querySelector('.close-button').addEventListener('click', closeSummaryModal);
             document.getElementById('restart-button').addEventListener('click', restartGame);
-            document.getElementById('practice-incorrect-button').addEventListener('click', practiceIncorrectQuestions);
-            document.getElementById('practice-slower-button').addEventListener('click', practiceSlowerQuestions);
+            document.getElementById('practice-combined-button').addEventListener('click', practiceCombinedQuestions);
 
             createMathProblems();
 
