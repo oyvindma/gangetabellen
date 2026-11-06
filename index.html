@@ -435,7 +435,6 @@
         /* Problem layout styles */
         .problems-list {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
             gap: 15px;
             margin: 20px 0;
         }
@@ -981,16 +980,27 @@
     </div>
 
     <script>
-        // Variables for progress tracking and gamification
-        let totalProblems = 0;
-        let answeredProblems = 0;
-        let answeredIndices = new Set(); // Track which problems have been answered
-        let currentPoints = 0;
-        let currentStreak = 0;
-        let highestStreak = 0;
+        // ===== Configuration =====
         const TOTAL_PROBLEMS_COUNT = 100; // Total number of problems to generate
+        const SECOND_OPERAND_RANGE = 10;  // Second operand runs 1..10
+        const OPERATOR_SYMBOLS = { multiply: '×', divide: '÷', add: '+', subtract: '−' };
+        const BASE_POINTS = 10;
+        const STREAK_BONUS_INTERVAL = 5; // +1 point multiplier every 5 correct answers in a row
 
-        // Helper function to shuffle an array
+        // ===== State =====
+        const state = {
+            totalProblems: 0,
+            answeredIndices: new Set(), // problems the user has answered at least once
+            points: 0,
+            streak: 0,
+            highestStreak: 0,
+            columns: 0                  // column count used for the last sorted layout
+        };
+
+        // ===== DOM helpers =====
+        const $ = id => document.getElementById(id);
+
+        // ===== Problem model (no markup here) =====
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -1000,581 +1010,314 @@
         }
 
         /**
-         * Generate and distribute math problems based on selected numbers, operations, and total count.
-         * @param {Array<number>} selectedNumbers - Array of numbers selected by the user.
-         * @param {Array<string>} selectedOperations - Array of operation types ('add', 'subtract', 'multiply', 'divide').
-         * @param {number} totalCount - The total number of problems to generate.
-         * @returns {Array<Object>} - An array of distributed problem objects.
+         * Build one problem. `n` is the user-selected number, `j` the second operand (1..10).
+         * Divisions are always integer, subtractions never negative.
          */
-        function generateDistributedProblems(selectedNumbers, selectedOperations, totalCount) {
-            const allPossibleProblems = [];
+        function buildProblem(operation, n, j) {
+            switch (operation) {
+                case 'multiply': return { a: n, b: j, result: n * j, operationType: operation };
+                case 'divide':   return { a: n * j, b: j, result: n, operationType: operation };
+                case 'add':      return { a: n, b: j, result: n + j, operationType: operation };
+                case 'subtract': {
+                    const hi = Math.max(n, j), lo = Math.min(n, j);
+                    return { a: hi, b: lo, result: hi - lo, operationType: operation };
+                }
+                default: return null;
+            }
+        }
 
-            // Generate all possible problems for the selections
-            for (let i of selectedNumbers) {
-                for (let j = 1; j <= 10; j++) { // Second operand range 1-10
-                    for (let operation of selectedOperations) {
-                        let problem = null;
-                        switch (operation) {
-                            case 'multiply':
-                                problem = {
-                                    a: i, b: j, result: i * j,
-                                    equation: `<span class="number-part">${i}</span><span class="operator">×</span><span class="number-part">${j}</span><span class="operator">=</span>`,
-                                    operationType: 'multiply'
-                                };
-                                break;
-                            case 'divide':
-                                // Ensure integer division: generate as k / j = i where k = i * j
-                                // Also ensures divisor j is not 0 (since j starts at 1)
-                                const k = i * j;
-                                problem = {
-                                    a: k, b: j, result: i,
-                                    equation: `<span class="number-part">${k}</span><span class="operator">÷</span><span class="number-part">${j}</span><span class="operator">=</span>`,
-                                    operationType: 'divide'
-                                };
-                                break;
-                            case 'add':
-                                problem = {
-                                    a: i, b: j, result: i + j,
-                                    equation: `<span class="number-part">${i}</span><span class="operator">+</span><span class="number-part">${j}</span><span class="operator">=</span>`,
-                                    operationType: 'add'
-                                };
-                                break;
-                            case 'subtract':
-                                // Ensure non-negative result: use max(i,j) - min(i,j)
-                                const num1 = Math.max(i, j);
-                                const num2 = Math.min(i, j);
-                                problem = {
-                                    a: num1, b: num2, result: num1 - num2,
-                                    equation: `<span class="number-part">${num1}</span><span class="operator">−</span><span class="number-part">${num2}</span><span class="operator">=</span>`,
-                                    operationType: 'subtract'
-                                };
-                                break;
-                        }
-                        if (problem) {
-                            allPossibleProblems.push(problem);
-                        }
-                    }
+        /** All unique problems for one operation and the selected numbers. */
+        function buildProblemPool(operation, selectedNumbers) {
+            const pool = [];
+            for (const n of selectedNumbers) {
+                for (let j = 1; j <= SECOND_OPERAND_RANGE; j++) {
+                    const problem = buildProblem(operation, n, j);
+                    if (problem) pool.push(problem);
                 }
             }
+            return pool;
+        }
 
-            // --- Start Distribution Logic ---
-            const distributedProblems = [];
-            const numOperations = selectedOperations.length;
+        /** Split `total` as evenly as possible over `parts` (first parts get the remainder). */
+        function splitEvenly(total, parts) {
+            const base = Math.floor(total / parts);
+            const remainder = total % parts;
+            return Array.from({ length: parts }, (_, i) => base + (i < remainder ? 1 : 0));
+        }
 
-            if (numOperations === 0 || allPossibleProblems.length === 0) {
-                // Handle edge case: No operations selected or no possible problems generated
-                // (e.g., if numbers 1-10 were somehow unselectable and none were checked)
-                // Optionally, return a default set or an empty array
-                console.warn("Cannot generate problems: No operations selected or no possible problems found.");
-                 // Fallback: Generate 100 default multiplication problems (1x1 to 10x10)
-                 for (let count = 0; count < totalCount; count++) {
-                     const i = (count % 10) + 1;
-                     const j = Math.floor(count / 10) + 1;
-                     distributedProblems.push({
-                         a: i, b: j, result: i * j,
-                         equation: `<span class="number-part">${i}</span><span class="operator">×</span><span class="number-part">${j}</span><span class="operator">=</span>`,
-                         operationType: 'multiply' // Mark as multiply for consistency
-                     });
-                 }
-                 return shuffleArray(distributedProblems); // Shuffle the fallback set
+        /**
+         * Pick `count` problems from a pool: shuffled first so every problem has the same
+         * chance, and repeating the pool when more problems are needed than exist.
+         */
+        function pickProblems(pool, count) {
+            const shuffled = shuffleArray([...pool]);
+            return Array.from({ length: count }, (_, i) => shuffled[i % shuffled.length]);
+        }
+
+        /** Generate `totalCount` problems spread evenly over the operations, in random order. */
+        function generateDistributedProblems(selectedNumbers, selectedOperations, totalCount) {
+            const counts = splitEvenly(totalCount, selectedOperations.length);
+            const problems = [];
+            selectedOperations.forEach((operation, i) => {
+                const pool = buildProblemPool(operation, selectedNumbers);
+                if (pool.length > 0) problems.push(...pickProblems(pool, counts[i]));
+            });
+            return shuffleArray(problems);
+        }
+
+        function sortProblems(problems) {
+            return [...problems].sort((p1, p2) => (p1.a - p2.a) || (p1.b - p2.b));
+        }
+
+        // ===== Layout =====
+        /** Number of columns the problems grid currently has (from CSS). */
+        function getColumnCount() {
+            const template = getComputedStyle($('problems-list')).gridTemplateColumns;
+            return template && template !== 'none' ? template.split(' ').length : 1;
+        }
+
+        /**
+         * Reorder row-major so that reading each column top-to-bottom follows the sequence.
+         */
+        function columnFirstOrder(items, columns) {
+            // Column heights differ by at most one: the first `extra` columns are taller,
+            // so the row-major grid fill lines up exactly with the columns.
+            const heights = splitEvenly(items.length, columns);
+            const starts = heights.map((_, col) => heights.slice(0, col).reduce((a, b) => a + b, 0));
+            const ordered = [];
+            for (let row = 0; row < heights[0]; row++) {
+                for (let col = 0; col < columns; col++) {
+                    if (row < heights[col]) ordered.push(items[starts[col] + row]);
+                }
             }
+            return ordered;
+        }
 
-            // Calculate target counts per operation
-            const baseCount = Math.floor(totalCount / numOperations);
-            let remainder = totalCount % numOperations;
-            const counts = {};
-            selectedOperations.forEach(op => counts[op] = baseCount);
-            for (let i = 0; i < remainder; i++) {
-                counts[selectedOperations[i]]++;
+        function isSortedOrder() {
+            return $('order-toggle').checked;
+        }
+
+        /**
+         * Arrange the existing problem nodes in the grid. Nodes keep their state; only
+         * their DOM order changes, so this is safe to call on resize.
+         */
+        function layoutProblems() {
+            const list = $('problems-list');
+            let nodes = Array.from(list.children).sort((x, y) => x.dataset.rank - y.dataset.rank);
+            state.columns = getColumnCount();
+            if (isSortedOrder()) nodes = columnFirstOrder(nodes, state.columns);
+            nodes.forEach(node => list.appendChild(node));
+        }
+
+        // ===== Rendering =====
+        function formatEquation(problem) {
+            return `<span class="number-part">${problem.a}</span>` +
+                   `<span class="operator">${OPERATOR_SYMBOLS[problem.operationType]}</span>` +
+                   `<span class="number-part">${problem.b}</span>` +
+                   `<span class="operator">=</span>`;
+        }
+
+        const INPUT_STATES = {
+            idle:      { className: '',                 mark: '',  color: '' },
+            invalid:   { className: 'invalid-answer',   mark: '!', color: 'orange' },
+            correct:   { className: 'correct-answer',   mark: '✓', color: 'green' },
+            incorrect: { className: 'incorrect-answer', mark: '✗', color: 'red' }
+        };
+
+        /** Single place that styles an answer input and records whether it is solved. */
+        function setInputState(input, feedback, stateName) {
+            const s = INPUT_STATES[stateName];
+            input.className = ('answer-input ' + s.className).trim();
+            input.dataset.solved = stateName === 'correct' ? '1' : '';
+            feedback.textContent = s.mark;
+            feedback.style.color = s.color;
+        }
+
+        function renderScore() {
+            $('points-display').textContent = state.points;
+            $('streak-display').textContent = state.streak;
+            $('highest-streak').textContent = state.highestStreak;
+        }
+
+        function renderProgress() {
+            const percentage = state.totalProblems > 0
+                ? (state.answeredIndices.size / state.totalProblems) * 100
+                : 0;
+            $('progress-bar').style.width = percentage + '%';
+        }
+
+        function setGameVisible(visible) {
+            $('gamification-panel').style.display = visible ? 'flex' : 'none';
+            $('progress-container').style.display = visible ? 'block' : 'none';
+        }
+
+        function setToggleStyle(toggleInputId, labelEl) {
+            labelEl.classList.toggle('active', $(toggleInputId).checked);
+        }
+
+        // ===== Game state =====
+        function resetGameState() {
+            state.points = 0;
+            state.streak = 0;
+            state.highestStreak = 0;
+            state.answeredIndices.clear();
+            renderScore();
+            renderProgress();
+        }
+
+        function markAnswered(index) {
+            if (state.answeredIndices.has(index)) return;
+            state.answeredIndices.add(index);
+            renderProgress();
+        }
+
+        function awardCorrectAnswer() {
+            state.streak++;
+            state.highestStreak = Math.max(state.highestStreak, state.streak);
+            const multiplier = Math.floor(state.streak / STREAK_BONUS_INTERVAL) + 1;
+            state.points += BASE_POINTS * multiplier;
+            renderScore();
+
+            const pointsDisplay = $('points-display');
+            pointsDisplay.classList.remove('points-increase');
+            void pointsDisplay.offsetWidth; // Trigger reflow to restart the animation
+            pointsDisplay.classList.add('points-increase');
+        }
+
+        function breakStreak() {
+            if (state.streak === 0) return;
+            state.streak = 0;
+            renderScore();
+        }
+
+        // ===== Answer checking =====
+        function checkAnswer(input, feedback) {
+            const value = input.value.trim();
+            if (value !== input.value && /^\d+$/.test(value)) input.value = value;
+
+            if (value === '') {
+                setInputState(input, feedback, 'idle');
+            } else if (!/^\d+$/.test(value)) {
+                setInputState(input, feedback, 'invalid');
+            } else if (parseInt(value, 10) === parseInt(input.dataset.correct, 10)) {
+                const wasSolved = input.dataset.solved === '1';
+                setInputState(input, feedback, 'correct');
+                if (!wasSolved) awardCorrectAnswer(); // points only the first time
+            } else {
+                setInputState(input, feedback, 'incorrect');
+                breakStreak();
             }
+        }
 
-            // Select problems for each operation type, allowing repetition
-            selectedOperations.forEach(op => {
-                // Filter the unique problems available for this operation type
-                const problemsForOp = allPossibleProblems.filter(p => p.operationType === op);
+        function createInteractiveProblem(container, problem, rank) {
+            container.innerHTML = formatEquation(problem);
 
-                if (problemsForOp.length > 0) {
-                    // Add the required number of problems for this operation, repeating if necessary
-                    for (let i = 0; i < counts[op]; i++) {
-                        // Use modulo to cycle through available problems for this type
-                        distributedProblems.push(problemsForOp[i % problemsForOp.length]);
-                    }
-                } else {
-                    // This should ideally not happen if allPossibleProblems.length > 0 initially,
-                    // but handle it just in case.
-                    console.warn(`No problems found for operation type: ${op}. Skipping.`);
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = `answer-${rank}`;
+            input.className = 'answer-input';
+            input.dataset.correct = problem.result;
+            input.tabIndex = rank + 1;
+            input.maxLength = 3;
+            input.inputMode = 'numeric';
+            input.pattern = '[0-9]*';
+
+            const feedback = document.createElement('span');
+            feedback.className = 'feedback';
+
+            // Check answer on Tab or Enter key
+            input.addEventListener('keydown', e => {
+                if (e.key !== 'Tab' && e.key !== 'Enter') return;
+                checkAnswer(input, feedback);
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const next = $(`answer-${rank + 1}`);
+                    if (next) next.focus();
                 }
             });
 
-            // --- End Distribution Logic ---
+            // Also check when the input loses focus
+            input.addEventListener('blur', () => {
+                if (input.readOnly || !input.value) return;
+                checkAnswer(input, feedback);
+                markAnswered(rank);
+            });
 
-            // Final shuffle to mix operations
-            return shuffleArray(distributedProblems);
+            container.append(input, feedback);
+            container._feedback = feedback;
+            return input;
         }
 
-        /**
-         * Process problems layout (column-first vs random)
-         */
-        function processProblemsLayout(problems, isRandom) {
-            // For numeric/sequential ordering, reorganize the array so that it fills
-            // vertically (column-first) instead of horizontally (row-first)
-            const rowsPerColumn = 25; // 25 rows per column with 4 columns = 100 problems
-            const columnsCount = 4;
-            
-            // Create an array with the correct ordering
-            const finalProblems = [];
-            
-            if (!isRandom) {
-                // Organize problems in column-first order for sequential display
-                // This ensures each column reads from top to bottom with sequential problems
-                
-                // First, sort the problems by 'a' then by 'b' for proper numeric ordering
-                const sortedProblems = [...problems].sort((p1, p2) => {
-                    if (p1.a !== p2.a) return p1.a - p2.a;
-                    return p1.b - p2.b;
-                });
-                
-                // Create a 2D array to represent our 4 columns with 25 rows each
-                const grid = Array(columnsCount).fill().map(() => Array(rowsPerColumn).fill(null));
-                
-                // Fill the grid column by column
-                let problemIndex = 0;
-                for (let col = 0; col < columnsCount; col++) {
-                    for (let row = 0; row < rowsPerColumn; row++) {
-                        if (problemIndex < sortedProblems.length) {
-                            grid[col][row] = sortedProblems[problemIndex++];
-                        }
-                    }
+        // ===== Show / hide answers =====
+        function setAnswersVisible(visible) {
+            setToggleStyle('show-results', $('show-answers-label'));
+            document.querySelectorAll('.problem-container').forEach(container => {
+                const input = container.querySelector('.answer-input');
+                setInputState(input, container._feedback, 'idle');
+                input.value = visible ? input.dataset.correct : '';
+                input.readOnly = visible;
+            });
+            resetGameState();
+            setGameVisible(!visible);
+        }
+
+        // ===== Controls =====
+        /** Read the selected numbers/operations, applying defaults (and ticking the boxes) if none. */
+        function readSelections() {
+            const read = (name, fallback) => {
+                let boxes = Array.from(document.querySelectorAll(`input[name="${name}"]`));
+                if (!boxes.some(cb => cb.checked)) {
+                    boxes.forEach(cb => cb.checked = fallback(cb));
                 }
-                
-                // Flatten the grid into our finalProblems array (reading row by row for HTML display)
-                for (let row = 0; row < rowsPerColumn; row++) {
-                    for (let col = 0; col < columnsCount; col++) {
-                        if (grid[col][row]) {
-                            finalProblems.push(grid[col][row]);
-                        }
-                    }
-                }
-            } else {
-                // For random order, just use the shuffled array
-                finalProblems.push(...shuffleArray([...problems]));
-            }
-            
-            return finalProblems;
+                return boxes.filter(cb => cb.checked).map(cb => cb.value);
+            };
+            return {
+                numbers: read('a_number', () => true).map(Number),            // default: 1-10
+                operations: read('operation_type', cb => cb.value === 'multiply') // default: multiply
+            };
         }
 
-        /**
-         * Creates an interactive problem with input field and feedback
-         * @param {HTMLElement} container - The container element for the problem
-         * @param {Object} problem - The problem object with equation and result
-         * @param {number} index - The index of the problem (for tabindex and ID)
-         */
-        function createInteractiveProblem(container, problem, index) {
-            const inputId = `answer-${index}`;
-            
-            // Create the HTML structure
-            container.innerHTML = problem.equation + 
-                `<input type="text" id="${inputId}" class="answer-input" data-correct="${problem.result}" data-index="${index}" tabindex="${index+1}" maxlength="3" inputmode="numeric" pattern="[0-9]*">` +
-                `<span id="feedback-${index}" class="feedback"></span>`;
-            
-            // Add event listeners after the element is added to the DOM
-            setTimeout(() => {
-                const input = document.getElementById(inputId);
-                if (!input) return;
-                
-                // Check answer on Tab or Enter key
-                input.addEventListener('keydown', function(e) {
-                    if (e.key === 'Tab' || e.key === 'Enter') {
-                        checkAnswer(inputId);
-                        
-                        // If Enter was pressed, prevent form submission and move to next input
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            const nextInput = document.getElementById(`answer-${index+1}`);
-                            if (nextInput) nextInput.focus();
-                        }
-                    }
-                });
-                
-                // Also check on blur (when input loses focus)
-                input.addEventListener('blur', function() {
-                    if (this.value) {
-                        checkAnswer(inputId);
-                        
-                        // Update progress when user leaves the field with content
-                        const index = parseInt(this.dataset.index);
-                        
-                        // Only count each problem once and only if it has content
-                        if (!answeredIndices.has(index)) {
-                            answeredIndices.add(index);
-                            answeredProblems++;
-                            updateProgressBar();
-                        }
-                    }
-                });
-            }, 0);
-        }
-
-        /**
-         * Validates and checks if an answer is correct
-         * @param {string} inputId - The ID of the input element to check
-         */
-        function checkAnswer(inputId) {
-            const input = document.getElementById(inputId);
-            const feedback = document.getElementById('feedback-' + inputId.split('-')[1]);
-            
-            // Keep the original value (don't clear it)
-            const originalValue = input.value;
-            // Trim spaces from input value
-            const trimmedValue = originalValue.trim();
-            
-            // Only update the input if we're removing spaces, not changing content
-            if (trimmedValue !== originalValue && /^\s*\d+\s*$/.test(originalValue)) {
-                input.value = trimmedValue;
-            }
-            
-            // Handle different input cases
-            if (trimmedValue === '') {
-                resetInputState(input, feedback);
-            } else if (!/^\d+$/.test(trimmedValue)) {
-                markAsInvalid(input, feedback);
-            } else {
-                checkNumericAnswer(input, feedback, trimmedValue);
-            }
-        }
-
-        /**
-         * Reset input to default state
-         */
-        function resetInputState(input, feedback) {
-            input.className = 'answer-input';
-            feedback.textContent = '';
-        }
-
-        /**
-         * Mark input as invalid (non-numeric)
-         */
-        function markAsInvalid(input, feedback) {
-            input.className = 'answer-input invalid-answer';
-            feedback.textContent = '!';
-            feedback.style.color = 'orange';
-        }
-
-        /**
-         * Check if numeric answer is correct
-         */
-        function checkNumericAnswer(input, feedback, value) {
-            const userAnswer = parseInt(value);
-            const correctAnswer = parseInt(input.dataset.correct);
-            const wasAlreadyCorrect = input.className.includes('correct-answer');
-            
-            if (userAnswer === correctAnswer) {
-                input.className = 'answer-input correct-answer';
-                feedback.textContent = '✓';
-                feedback.style.color = 'green';
-                
-                // Only award points if this is the first time getting it correct
-                if (!wasAlreadyCorrect) {
-                    // Award points and update streak
-                    currentStreak++;
-                    if (currentStreak > highestStreak) {
-                        highestStreak = currentStreak;
-                        document.getElementById('highest-streak').textContent = highestStreak;
-                    }
-                    
-                    // Calculate points (base + streak bonus)
-                    const basePoints = 10;
-                    const streakMultiplier = Math.floor(currentStreak / 5) + 1; // +1 multiplier every 5 correct answers
-                    const pointsToAdd = basePoints * streakMultiplier;
-                    
-                    // Add points
-                    currentPoints += pointsToAdd;
-                    
-                    // Update displays with animation
-                    const pointsDisplay = document.getElementById('points-display');
-                    const streakDisplay = document.getElementById('streak-display');
-                    
-                    pointsDisplay.textContent = currentPoints;
-                    streakDisplay.textContent = currentStreak;
-                    
-                    // Add animation
-                    pointsDisplay.classList.remove('points-increase');
-                    void pointsDisplay.offsetWidth; // Trigger reflow
-                    pointsDisplay.classList.add('points-increase');
-                }
-            } else {
-                input.className = 'answer-input incorrect-answer';
-                feedback.textContent = '✗';
-                feedback.style.color = 'red';
-                
-                // Reset streak on wrong answer
-                if (currentStreak > 0) {
-                    currentStreak = 0;
-                    document.getElementById('streak-display').textContent = currentStreak;
-                }
-            }
-        }
-
-        /**
-         * Display problems based on current settings
-         */
         function displayProblems(problems) {
-            const problemsList = document.getElementById('problems-list');
-            const showResults = document.getElementById('show-results').checked;
-            const progressContainer = document.getElementById('progress-container');
-            
-            // Clear existing problems
-            problemsList.innerHTML = '';
-            
-            // Store problems data globally for toggling answers
-            window.problemsData = problems;
-            
-            // Update total problems count for progress tracking
-            totalProblems = problems.length;
-            
-            // Always show progress bar and gamification panel (interactive mode is always on)
-            progressContainer.style.display = 'block';
-            document.getElementById('gamification-panel').style.display = 'flex';
-            
-            // Reset progress tracking when problems are redisplayed
-            answeredProblems = 0;
-            answeredIndices.clear();
-            updateProgressBar();
-            
-            // Display all problems
-            for (let i = 0; i < problems.length; i++) {
-                const problem = problems[i];
+            const list = $('problems-list');
+            list.innerHTML = '';
+            state.totalProblems = problems.length;
+
+            problems.forEach((problem, rank) => {
                 const div = document.createElement('div');
                 div.className = 'problem-container';
-                
-                // Always use interactive mode
-                createInteractiveProblem(div, problem, i);
-                
-                problemsList.appendChild(div);
-            }
+                div.dataset.rank = rank;
+                createInteractiveProblem(div, problem, rank);
+                list.appendChild(div);
+            });
+
+            layoutProblems();
         }
 
-        /**
-         * Creates the math problems based on user selections.
-         */
+        /** Generate a fresh test from the current controls. */
         function createMathProblems() {
-            // Get selected numbers
-            const selectedNumbers = [];
-            const numberCheckboxes = document.querySelectorAll('input[name="a_number"]:checked');
-            if (numberCheckboxes.length === 0) {
-                 // Default to 1-10 if none selected?
-                 for(let i=1; i<=10; i++) selectedNumbers.push(i);
-                 // Maybe check the boxes visually too?
-                 document.querySelectorAll('input[name="a_number"]').forEach(cb => cb.checked = true);
-            } else {
-                numberCheckboxes.forEach(checkbox => {
-                    selectedNumbers.push(parseInt(checkbox.value));
-                });
-            }
+            const { numbers, operations } = readSelections();
+            const problems = generateDistributedProblems(numbers, operations, TOTAL_PROBLEMS_COUNT);
 
-            // Get selected operations
-            const selectedOperations = [];
-            const operationCheckboxes = document.querySelectorAll('input[name="operation_type"]:checked');
-            if (operationCheckboxes.length === 0) {
-                // Default to multiplication if none selected
-                selectedOperations.push('multiply');
-                // Check the multiplication box visually
-                 const multiplyCheckbox = document.querySelector('input[name="operation_type"][value="multiply"]');
-                 if (multiplyCheckbox) multiplyCheckbox.checked = true;
-            } else {
-                operationCheckboxes.forEach(checkbox => {
-                    selectedOperations.push(checkbox.value);
-                });
-            }
-            
-            // Reset gamification values when controls are changed
-            currentPoints = 0;
-            currentStreak = 0;
-            highestStreak = 0;
-            document.getElementById('points-display').textContent = '0';
-            document.getElementById('streak-display').textContent = '0';
-            document.getElementById('highest-streak').textContent = '0';
-            
-            // Reset progress tracking
-            answeredProblems = 0;
-            answeredIndices.clear();
-            updateProgressBar();
-
-            // Generate distributed problems
-            const problems = generateDistributedProblems(selectedNumbers, selectedOperations, TOTAL_PROBLEMS_COUNT);
-
-            // Get sorting preference
-            const isRandom = !document.getElementById('order-toggle').checked;
-
-            // Process layout (sorting/shuffling)
-            const finalProblems = processProblemsLayout(problems, isRandom);
-
-            // Display problems
-            displayProblems(finalProblems);
+            displayProblems(isSortedOrder() ? sortProblems(problems) : problems);
+            setAnswersVisible($('show-results').checked); // also resets score/progress
         }
 
-        /**
-         * Toggle answers visibility without regenerating the test
-         */
         function toggleAnswers() {
-            const showResults = document.getElementById('show-results').checked;
-            const gamificationPanel = document.getElementById('gamification-panel');
-            const progressContainer = document.getElementById('progress-container');
-            
-            // Update label styling
-            const showAnswersLabel = document.getElementById('show-answers-label');
-            if (showResults) {
-                showAnswersLabel.classList.add('active');
-                
-                // Fill in all input boxes with correct answers
-                const inputs = document.querySelectorAll('.answer-input');
-                inputs.forEach(input => {
-                    const correctAnswer = input.getAttribute('data-correct');
-                    input.value = correctAnswer;
-                    input.readOnly = true;
-                    
-                    // Reset any correct/incorrect styling
-                    input.className = 'answer-input';
-                    
-                    // Clear any existing feedback
-                    const feedbackId = input.id.replace('answer', 'feedback');
-                    const feedback = document.getElementById(feedbackId);
-                    if (feedback) {
-                        feedback.textContent = '';
-                        feedback.style.color = ''; // Reset color
-                    }
-                });
-                
-                // Hide gamification elements
-                gamificationPanel.style.display = 'none';
-                progressContainer.style.display = 'none';
-                
-                // Reset gamification values
-                currentPoints = 0;
-                currentStreak = 0;
-                highestStreak = 0;
-                document.getElementById('points-display').textContent = '0';
-                document.getElementById('streak-display').textContent = '0';
-            } else {
-                showAnswersLabel.classList.remove('active');
-                
-                // Clear all input boxes and make them editable again
-                const inputs = document.querySelectorAll('.answer-input');
-                inputs.forEach(input => {
-                    input.value = '';
-                    input.readOnly = false;
-                    input.className = 'answer-input'; // Reset any correct/incorrect styling
-                });
-                
-                // Show gamification elements again
-                gamificationPanel.style.display = 'flex';
-                progressContainer.style.display = 'block';
-                
-                // Reset progress
-                answeredProblems = 0;
-                answeredIndices.clear();
-                updateProgressBar();
-            }
+            setAnswersVisible($('show-results').checked);
         }
 
-        /**
-         * Toggle between sequential and random order
-         */
         function toggleOrder() {
-            // Get current state - checked = sequential order, unchecked = random order
-            const isSorted = document.getElementById('order-toggle').checked;
-            
-            // Update toggle styling
-            const toggleSwitch = document.querySelector('#order-toggle + .slider');
-            if (isSorted) {
-                toggleSwitch.classList.add('active');
-            } else {
-                toggleSwitch.classList.remove('active');
-            }
-            
-            // Regenerate problems with new order
-            const problems = generateDistributedProblems(
-                Array.from(document.querySelectorAll('input[name="a_number"]:checked')).map(cb => parseInt(cb.value)),
-                Array.from(document.querySelectorAll('input[name="operation_type"]:checked')).map(cb => cb.value),
-                TOTAL_PROBLEMS_COUNT
-            );
-
-            // Process layout (sorting/shuffling)
-            const finalProblems = processProblemsLayout(problems, !isSorted);
-
-            // Display problems using shared function
-            displayProblems(finalProblems);
-        }
-
-        /**
-         * Updates the progress when a user fills in an answer and leaves the field
-         * @param {Event} event - The blur event
-         */
-        function updateProgress(event) {
-            // Interactive mode is always on, so no need to check
-            const input = event.target;
-            if (!input.value || input.value.trim() === '') return; // Only count if field has content
-            
-            const index = parseInt(input.dataset.index);
-            
-            // Only count each problem once
-            if (!answeredIndices.has(index)) {
-                answeredIndices.add(index);
-                answeredProblems++;
-                updateProgressBar();
-            }
-        }
-
-        /**
-         * Updates the progress bar width based on answered problems
-         */
-        function updateProgressBar() {
-            const progressBar = document.getElementById('progress-bar');
-            if (totalProblems > 0) {
-                const percentage = (answeredProblems / totalProblems) * 100;
-                progressBar.style.width = percentage + '%';
-                console.log(`Progress: ${answeredProblems}/${totalProblems} (${percentage.toFixed(1)}%)`);
-            } else {
-                progressBar.style.width = '0%';
-                console.log('Progress: 0/0 (0%)');
-            }
-        }
-
-        // Run the test creation when the page loads
-        window.onload = function() {
-            // Reset gamification elements
-            currentPoints = 0;
-            currentStreak = 0;
-            highestStreak = 0;
-            document.getElementById('points-display').textContent = '0';
-            document.getElementById('streak-display').textContent = '0';
-            document.getElementById('highest-streak').textContent = '0';
-            
+            setToggleStyle('order-toggle', document.querySelector('#order-toggle + .slider'));
             createMathProblems();
-            
-            // Set initial toggle styling
-            const isSorted = document.getElementById('order-toggle').checked;
-            const toggleSwitch = document.querySelector('#order-toggle + .slider');
-            
-            if (isSorted) {
-                toggleSwitch.classList.add('active');
-            } else {
-                toggleSwitch.classList.remove('active');
-            }
-            
-            // Set initial label styling for show answers toggle
-            const showResults = document.getElementById('show-results').checked;
-            const showAnswersLabel = document.getElementById('show-answers-label');
-            if (showResults) {
-                showAnswersLabel.classList.add('active');
-            } else {
-                showAnswersLabel.classList.remove('active');
-            }
-            
-            // Always initialize in interactive mode
-            document.getElementById('progress-container').style.display = 'block';
-            document.getElementById('gamification-panel').style.display = 'flex';
-            updateProgressBar();
+        }
+
+        window.addEventListener('resize', () => {
+            if (isSortedOrder() && getColumnCount() !== state.columns) layoutProblems();
+        });
+
+        window.onload = function() {
+            setToggleStyle('order-toggle', document.querySelector('#order-toggle + .slider'));
+            createMathProblems();
         };
     </script>
 </body>
