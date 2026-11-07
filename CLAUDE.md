@@ -9,8 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 - Run locally: open `index.html` in a browser, or serve with `python3 -m http.server` from the repo root.
-- Browser checks: `playwright-scenarios/` holds Playwright scenarios (`gameplay.mjs`, `sticky-progress.mjs`, `persistence.mjs`, `summary.mjs`) that run in headless Chromium via the `verify-webpage` Claude skill (installed in `~/.claude/skills`, not in this repo; it manages Playwright itself, so don't add it to the repo). From the repo root:
-  `node ~/.claude/skills/verify-webpage/scripts/verify.mjs --root . --test playwright-scenarios/gameplay.mjs --test playwright-scenarios/sticky-progress.mjs --test playwright-scenarios/persistence.mjs --test playwright-scenarios/summary.mjs --seed 1`
+- Checks: run `scripts/check.sh` from anywhere. It syntax-checks the inline script, then runs every `playwright-scenarios/*.mjs` (currently `gameplay.mjs`, `sticky-progress.mjs`, `persistence.mjs`, `summary.mjs`) in headless Chromium via the `verify-webpage` Claude skill (installed in `~/.claude/skills`, not in this repo; it manages Playwright itself, so don't add it to the repo), printing only failures and the tally. New scenario files are picked up automatically. The script wraps `node ~/.claude/skills/verify-webpage/scripts/verify.mjs --root . --test <each scenario> --seed 1`.
   They default to desktop and phone viewports (tablet is not covered). Run them after changing `index.html`. When you change the page structure (ids, classes, DOM layout) or add/remove/alter functionality, update the scenarios to match (and add new ones for new features) in the same change.
 - Deploy: GitHub Pages is set to "Deploy from a branch" (`main`, `/`), so pushing to `main` publishes the repo root as-is. There is no Actions workflow. To republish without a commit: `gh api -X POST repos/oyvindma/gangetabellen/pages/builds`.
 
