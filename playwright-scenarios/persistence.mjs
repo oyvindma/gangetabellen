@@ -62,7 +62,7 @@ export default async function ({ page, check, eq, domClick, open, screenshot }) 
   eq('score reset', await num('#points-display'), 0);
   await open();
   eq('sorted mode persists', await page.$eval('#order-toggle', e => e.checked), true);
-  eq('100 problems after reload', await page.locator('.problem-container').count(), 100);
+  eq('50 problems after reload', await page.locator('.problem-container').count(), 50);
 
   // accepted clear gives a fresh, empty test that persists as such
   await page.fill('#answer-5', '1'); await page.press('#answer-5', 'Enter');
@@ -82,5 +82,19 @@ export default async function ({ page, check, eq, domClick, open, screenshot }) 
   await domClick('#show-results');
   await open();
   eq('show-answers persists', await page.$$eval('.answer-input', els => els.every(e => e.value === e.dataset.correct && e.readOnly)), true);
+  // problem count: persists, and a declined change reverts
+  await domClick('#clear-btn');
+  await page.selectOption('#problem-count', '25');
+  eq('25 problems', await page.locator('.problem-container').count(), 25);
+  await open();
+  eq('count persists', await page.$eval('#problem-count', e => e.value), '25');
+  eq('25 problems after reload', await page.locator('.problem-container').count(), 25);
+  await domClick('#show-results');
+  await page.fill('#answer-0', '1'); await page.press('#answer-0', 'Enter');
+  accept = false; dialogs = [];
+  await page.selectOption('#problem-count', '50');
+  eq('count change asks', dialogs.length, 1);
+  eq('count reverted', await page.$eval('#problem-count', e => e.value), '25');
+  eq('still 25 problems', await page.locator('.problem-container').count(), 25);
   await screenshot('persistence');
 }

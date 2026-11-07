@@ -4,8 +4,15 @@ export default async function ({ page, check, eq, domClick, open, screenshot }) 
   await open();
   const num = async s => Number(await page.locator(s).textContent());
   const count = () => page.locator('.problem-container').count();
-  eq('100 problems by default', await count(), 100);
+  eq('50 problems by default', await count(), 50);
   eq('only multiply by default: all have "×"-like operator', await page.locator('.problem-container').first().textContent().then(t => /[×x*]/.test(t)), true);
+
+  // problem count selector
+  for (const n of [10, 25, 50, 100]) {
+    await page.selectOption('#problem-count', String(n));
+    eq(`${n} problems selected`, await count(), n);
+    eq(`progress total for ${n}`, await page.locator('.problem-container .answer-input').count(), n);
+  }
 
   // wrong answer
   eq('points start 0', await num('#points-display'), 0);

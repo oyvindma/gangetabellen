@@ -25,7 +25,7 @@ export default async function ({ page, check, eq, open, screenshot }) {
   // progress updates while stuck
   await page.evaluate(() => { const i = document.querySelector('.answer-input:not([readonly])'); i.scrollIntoView(); });
   const id = await page.evaluate(() => { const els=[...document.querySelectorAll('.answer-input')]; return els.find(e=>e.getBoundingClientRect().top>150 && e.getBoundingClientRect().top<innerHeight)?.id; });
-  await page.fill('#'+id, '1'); await page.focus('#answer-99');
+  await page.fill('#'+id, '1'); await page.focus('#answer-49');
   const w = await page.$eval('#progress-bar', e => parseFloat(e.style.width));
   check('progress bar fills while stuck', w > 0, `width=${w}%`);
   eq('still stuck after update', await top(), 0);
@@ -34,7 +34,7 @@ export default async function ({ page, check, eq, open, screenshot }) {
   const overlap = await page.evaluate(() => { const b=document.querySelector('#progress-container').getBoundingClientRect(); return b.bottom; });
   // Focus on a field must not leave it hidden under the bar
   await page.evaluate(() => window.scrollTo(0, 3000));
-  await page.focus('#answer-60');
+  await page.focus('#answer-40');
   await page.waitForTimeout(100);
   const hidden = await page.evaluate(() => { const b=document.querySelector('#progress-container').getBoundingClientRect().bottom; return document.activeElement.getBoundingClientRect().top < b; });
   check('focused input not hidden under sticky bar', !hidden);

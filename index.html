@@ -443,6 +443,18 @@
         }
         
         /* Active label color for sorting toggle */
+        .count-select {
+            margin-top: 6px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 8px;
+            border: 2px solid #ccc;
+            color: var(--text-color);
+            background: white;
+        }
+
         .toggle-label.active {
             color: #2196F3;
         }
@@ -971,6 +983,15 @@
                         <span class="slider"></span>
                     </label>
                 </div>
+                <div class="toggle-container">
+                    <label class="toggle-label" for="problem-count">Antall oppgaver</label>
+                    <select id="problem-count" class="count-select" onchange="onConfigChange(this)">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
                 <div class="toggle-container show-answers">
                     <span class="toggle-label" id="show-answers-label">Vis svar</span>
                     <label class="toggle-switch">
@@ -1007,7 +1028,8 @@
 
     <script>
         // ===== Configuration =====
-        const TOTAL_PROBLEMS_COUNT = 100; // Total number of problems to generate
+        const PROBLEM_COUNT_OPTIONS = [10, 25, 50, 100];
+        const DEFAULT_PROBLEM_COUNT = 50;     // Used when no valid count is selected
         const SECOND_OPERAND_RANGE = 10;  // Second operand runs 1..10
         const OPERATOR_SYMBOLS = { multiply: '×', divide: '÷', add: '+', subtract: '−' };
         const BASE_POINTS = 10;
@@ -1311,6 +1333,11 @@
             };
         }
 
+        function readProblemCount() {
+            const n = Number($('problem-count').value);
+            return PROBLEM_COUNT_OPTIONS.includes(n) ? n : DEFAULT_PROBLEM_COUNT;
+        }
+
         function displayProblems(problems) {
             const list = $('problems-list');
             list.innerHTML = '';
@@ -1330,7 +1357,7 @@
         /** Generate a fresh test from the current controls. */
         function createMathProblems() {
             const { numbers, operations } = readSelections();
-            const problems = generateDistributedProblems(numbers, operations, TOTAL_PROBLEMS_COUNT);
+            const problems = generateDistributedProblems(numbers, operations, readProblemCount());
 
             state.problems = isSortedOrder() ? sortProblems(problems) : problems;
             displayProblems(state.problems);
@@ -1363,9 +1390,11 @@
         /** Every settings control routes through here: confirm first, revert the control if declined. */
         function onConfigChange(el) {
             if (!confirmDiscardProgress()) {
-                el.checked = !el.checked;
+                if (el.id === 'problem-count') el.value = el.dataset.prev || String(DEFAULT_PROBLEM_COUNT);
+                else el.checked = !el.checked;
                 return;
             }
+            if (el.id === 'problem-count') el.dataset.prev = el.value;
             if (el.id === 'order-toggle') toggleOrder();
             else if (el.id === 'show-results') toggleAnswers();
             else createMathProblems();
@@ -1397,6 +1426,7 @@
                         numbers: checkedValues('a_number'),
                         operations: checkedValues('operation_type'),
                         sorted: isSortedOrder(),
+                        count: readProblemCount(),
                         showResults: $('show-results').checked
                     },
                     problems: state.problems,
@@ -1424,6 +1454,8 @@
             document.querySelectorAll('input[name="a_number"]').forEach(cb => cb.checked = config.numbers.includes(cb.value));
             document.querySelectorAll('input[name="operation_type"]').forEach(cb => cb.checked = config.operations.includes(cb.value));
             $('order-toggle').checked = !!config.sorted;
+            if (PROBLEM_COUNT_OPTIONS.includes(Number(config.count))) $('problem-count').value = String(config.count);
+            $('problem-count').dataset.prev = $('problem-count').value;
             $('show-results').checked = !!config.showResults;
             setToggleStyle('order-toggle', document.querySelector('#order-toggle + .slider'));
             setToggleStyle('show-results', $('show-answers-label'));
@@ -1453,6 +1485,7 @@
         });
 
         window.onload = function() {
+            $('problem-count').dataset.prev = $('problem-count').value;
             setToggleStyle('order-toggle', document.querySelector('#order-toggle + .slider'));
             let restored = false;
             try { restored = restoreSession(); } catch (e) { /* corrupt save */ }
