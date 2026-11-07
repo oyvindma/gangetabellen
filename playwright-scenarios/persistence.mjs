@@ -97,4 +97,11 @@ export default async function ({ page, check, eq, domClick, open, screenshot }) 
   eq('count reverted', await page.$eval('#problem-count', e => e.value), '25');
   eq('still 25 problems', await page.locator('.problem-container').count(), 25);
   await screenshot('persistence');
+
+  // large-numbers toggle persists
+  accept = true;
+  await domClick('#large-numbers-toggle');
+  await open();
+  eq('large toggle persists', await page.$eval('#large-numbers-toggle', e => e.checked), true);
+  eq('1-4 still disabled after reload', await page.$$eval('input[name=a_number]:disabled', e => e.length), 4);
 }

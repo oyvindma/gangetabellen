@@ -71,4 +71,16 @@ export default async function ({ page, check, eq, domClick, open, screenshot }) 
   await domClick('#order-toggle');
   for (const n of [1,2,3]) await domClick(`input[name=a_number][value="${n}"]`);
   eq('unticking all numbers restores 10', await page.$$eval('input[name=a_number]:checked', e => e.length), 10);
+
+  // large numbers only
+  await domClick('#large-numbers-toggle');
+  eq('numbers 1-4 disabled in large mode', await page.$$eval('input[name=a_number]:disabled', e => e.length), 4);
+  eq('numbers 1-4 unticked in large mode', await page.$$eval('input[name=a_number]:checked', e => e.length), 6);
+  const small = await page.$$eval('.problem-container', els => els.filter(e => [...e.querySelectorAll('.number-part')].some(n => +n.textContent < 5)).length);
+  eq('no operand below 5 in large mode', small, 0);
+  eq('still 100 problems in large mode', await count(), 100);
+  for (let n = 5; n <= 10; n++) await domClick(`input[name=a_number][value="${n}"]`);
+  eq('unticking all large numbers defaults to 5-10 only', await page.$$eval('input[name=a_number]:checked', e => e.length), 6);
+  await domClick('#large-numbers-toggle');
+  eq('numbers 1-4 enabled again', await page.$$eval('input[name=a_number]:disabled', e => e.length), 0);
 }

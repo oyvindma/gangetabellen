@@ -20,6 +20,11 @@
             --text-color: #212529;         /* Dark Gray */
             --correct-color: #198754;      /* Dark Green (for correct) */
             --incorrect-color: #DC3545;    /* Red (already defined as accent) */
+            --spacing-sm: 10px;
+            --spacing-md: 15px;
+            --spacing-lg: 20px;
+            --radius-md: 10px;
+            --radius-lg: 15px;
         }
         
         /* ============= SCREEN STYLES ============= */
@@ -469,6 +474,17 @@
             margin-top: 15px;
         }
         
+        /* Disabled number buttons (large-numbers mode) */
+        .number-selection label.disabled {
+            background: #ccc;
+            border-color: #999;
+            cursor: not-allowed;
+        }
+
+        .number-selection label.disabled span {
+            color: #555;
+        }
+
         /* Problem layout styles */
         .problems-list {
             display: grid;
@@ -901,6 +917,143 @@
         .footer p span {
             color: var(--secondary-color); /* Orange emphasis in footer */
         }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: var(--card-color);
+            margin: auto;
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        .practice-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+        }
+
+        .practice-button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        .practice-button:hover {
+            background-color: #e67300;
+            transform: translateY(-2px);
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-button {
+            position: absolute;
+            top: var(--spacing-sm);
+            right: var(--spacing-md);
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        .close-button:hover {
+            color: var(--accent-color);
+        }
+
+        .modal h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: var(--spacing-lg);
+            font-family: 'Fredoka One', cursive;
+        }
+
+        .summary-stats {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background-color: var(--background-color);
+            border-radius: var(--radius-md);
+        }
+
+        .summary-label {
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .summary-value {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        .restart-button {
+            display: block;
+            width: 100%;
+            padding: var(--spacing-md);
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-family: 'Nunito', sans-serif;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .restart-button:hover {
+            background-color: #e06c00;
+        }
+
+        .practice-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media print {
+            .modal { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -992,6 +1145,13 @@
                         <option value="100">100</option>
                     </select>
                 </div>
+                <div class="toggle-container">
+                    <span class="toggle-label" id="large-numbers-label">Kun store tall</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="large-numbers-toggle" onchange="onConfigChange(this)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
                 <div class="toggle-container show-answers">
                     <span class="toggle-label" id="show-answers-label">Vis svar</span>
                     <label class="toggle-switch">
@@ -1024,6 +1184,36 @@
         <div class="footer">
             <p>Skriv svarene på linjene. <span style="color: var(--secondary-color);">Lykke til! 🚀</span></p>
         </div>
+
+        <!-- Summary Modal -->
+        <div id="summary-modal" class="modal no-print">
+            <div class="modal-content">
+                <span class="close-button" id="summary-close">&times;</span>
+                <h2>Oppsummering</h2>
+                <div class="summary-stats">
+                    <div class="summary-item">
+                        <span class="summary-label">Total poengsum:</span>
+                        <span id="summary-points" class="summary-value">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Tid brukt:</span>
+                        <span id="summary-time" class="summary-value">0 sekunder</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Riktige svar:</span>
+                        <span id="summary-correct" class="summary-value">0 av 0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Høyeste streak:</span>
+                        <span id="summary-streak" class="summary-value">0</span>
+                    </div>
+                </div>
+                <div class="practice-buttons">
+                    <button type="button" id="restart-button" class="restart-button">Prøv igjen</button>
+                    <button type="button" id="practice-button" class="practice-button">Bli enda bedre! 💪</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -1031,6 +1221,7 @@
         const PROBLEM_COUNT_OPTIONS = [10, 25, 50, 100];
         const DEFAULT_PROBLEM_COUNT = 50;     // Used when no valid count is selected
         const SECOND_OPERAND_RANGE = 10;  // Second operand runs 1..10
+        const LARGE_NUMBER_MIN = 5;       // "Kun store tall": both operands must be at least this
         const OPERATOR_SYMBOLS = { multiply: '×', divide: '÷', add: '+', subtract: '−' };
         const BASE_POINTS = 10;
         const STREAK_BONUS_INTERVAL = 5; // +1 point multiplier every 5 correct answers in a row
@@ -1045,11 +1236,41 @@
             points: 0,
             streak: 0,
             highestStreak: 0,
-            columns: 0                  // column count used for the last sorted layout
+            columns: 0,                 // column count used for the last sorted layout
+            startedAt: null,            // active-clock time of the first focus in this test
+            finishedAt: null,           // active-clock time when the last problem was answered
+            questionStart: {},          // problem rank -> active-clock time of its first focus
+            questionTimes: {},          // problem rank -> ms spent before its first answer
+            incorrect: new Set()        // ranks whose current answer is wrong
         };
 
         // ===== DOM helpers =====
         const $ = id => document.getElementById(id);
+
+        // ===== Active clock =====
+        // Does not advance while the page is hidden (screen off, tab/app switched) or the
+        // window is unfocused, so such gaps are never counted as time spent on a problem.
+        // Uses Date.now() (not performance.now(), which may stop during device sleep).
+        let pausedTotal = 0; // ms spent paused so far
+        let pausedAt = null; // Date.now() when the current pause began, else null
+
+        function activeNow() {
+            const now = Date.now();
+            return now - pausedTotal - (pausedAt !== null ? now - pausedAt : 0);
+        }
+
+        function syncClock() {
+            const active = document.visibilityState === 'visible' && document.hasFocus();
+            if (!active && pausedAt === null) {
+                pausedAt = Date.now();
+            } else if (active && pausedAt !== null) {
+                pausedTotal += Date.now() - pausedAt;
+                pausedAt = null;
+            }
+        }
+        ['visibilitychange', 'blur', 'focus', 'pagehide', 'pageshow']
+            .forEach(ev => window.addEventListener(ev, syncClock));
+        syncClock();
 
         // ===== Problem model (no markup here) =====
         function shuffleArray(array) {
@@ -1078,12 +1299,14 @@
         }
 
         /** All unique problems for one operation and the selected numbers. */
-        function buildProblemPool(operation, selectedNumbers) {
+        function buildProblemPool(operation, selectedNumbers, largeNumbersOnly) {
             const pool = [];
             for (const n of selectedNumbers) {
                 for (let j = 1; j <= SECOND_OPERAND_RANGE; j++) {
                     const problem = buildProblem(operation, n, j);
-                    if (problem) pool.push(problem);
+                    if (!problem) continue;
+                    if (largeNumbersOnly && (problem.a < LARGE_NUMBER_MIN || problem.b < LARGE_NUMBER_MIN)) continue;
+                    pool.push(problem);
                 }
             }
             return pool;
@@ -1106,11 +1329,11 @@
         }
 
         /** Generate `totalCount` problems spread evenly over the operations, in random order. */
-        function generateDistributedProblems(selectedNumbers, selectedOperations, totalCount) {
+        function generateDistributedProblems(selectedNumbers, selectedOperations, totalCount, largeNumbersOnly) {
             const counts = splitEvenly(totalCount, selectedOperations.length);
             const problems = [];
             selectedOperations.forEach((operation, i) => {
-                const pool = buildProblemPool(operation, selectedNumbers);
+                const pool = buildProblemPool(operation, selectedNumbers, largeNumbersOnly);
                 if (pool.length > 0) problems.push(...pickProblems(pool, counts[i]));
             });
             return shuffleArray(problems);
@@ -1160,6 +1383,38 @@
             nodes.forEach(node => list.appendChild(node));
         }
 
+        // ===== Practice analysis (pure data, no DOM) =====
+        /** Ranks whose time exceeds mean + 0.5 standard deviation of all recorded times. */
+        function findSlowRanks(timesByRank) {
+            const entries = Object.entries(timesByRank);
+            if (entries.length === 0) return [];
+            const times = entries.map(([, ms]) => ms);
+            const mean = times.reduce((sum, t) => sum + t, 0) / times.length;
+            const variance = times.reduce((sum, t) => sum + (t - mean) ** 2, 0) / times.length;
+            const threshold = mean + 0.5 * Math.sqrt(variance);
+            return entries.filter(([, ms]) => ms > threshold).map(([rank]) => Number(rank));
+        }
+
+        /** Ranks the user struggled with: answered wrong, or took unusually long. */
+        function findStruggledRanks() {
+            return Array.from(new Set([...state.incorrect, ...findSlowRanks(state.questionTimes)]))
+                .filter(rank => rank < state.problems.length);
+        }
+
+        /** Repeat the given problems until there are `count` of them. */
+        function buildPracticeSet(problems, ranks, count) {
+            const picked = ranks.map(rank => problems[rank]);
+            return Array.from({ length: count }, (_, i) => picked[i % picked.length]);
+        }
+
+        function formatDuration(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            if (minutes === 0) return `${seconds} sekunder`;
+            if (seconds === 0) return `${minutes} minutter`;
+            return `${minutes} minutter og ${seconds} sekunder`;
+        }
+
         // ===== Rendering =====
         function formatEquation(problem) {
             return `<span class="number-part">${problem.a}</span>` +
@@ -1207,7 +1462,28 @@
         }
 
         // ===== Game state =====
+        function resetTiming() {
+            state.startedAt = null;
+            state.finishedAt = null;
+            state.questionStart = {};
+            state.questionTimes = {};
+            state.incorrect.clear();
+        }
+
+        /** Start the clock for a problem the first time the user focuses it. */
+        function startQuestionTimer(rank) {
+            if (state.startedAt === null) state.startedAt = activeNow();
+            if (state.questionStart[rank] === undefined) state.questionStart[rank] = activeNow();
+        }
+
+        /** Record how long a problem took, the first time it gets an answer. */
+        function recordQuestionTime(rank) {
+            if (state.questionStart[rank] === undefined || state.questionTimes[rank] !== undefined) return;
+            state.questionTimes[rank] = activeNow() - state.questionStart[rank];
+        }
+
         function resetGameState() {
+            resetTiming();
             state.points = 0;
             state.streak = 0;
             state.highestStreak = 0;
@@ -1220,6 +1496,13 @@
             if (state.answeredIndices.has(index)) return;
             state.answeredIndices.add(index);
             renderProgress();
+            if (state.answeredIndices.size === state.totalProblems) {
+                if (state.startedAt === null) state.startedAt = activeNow();
+                state.finishedAt = activeNow();
+                saveSession();
+                showSummary();
+                return;
+            }
             saveSession();
         }
 
@@ -1244,8 +1527,10 @@
 
         // ===== Answer checking =====
         function checkAnswer(input, feedback) {
+            const rank = Number(input.dataset.rank);
             const value = input.value.trim();
             if (value !== input.value && /^\d+$/.test(value)) input.value = value;
+            if (value !== '') recordQuestionTime(rank);
 
             if (value === '') {
                 setInputState(input, feedback, 'idle');
@@ -1254,9 +1539,11 @@
             } else if (parseInt(value, 10) === parseInt(input.dataset.correct, 10)) {
                 const wasSolved = input.dataset.solved === '1';
                 setInputState(input, feedback, 'correct');
+                state.incorrect.delete(rank);
                 if (!wasSolved) awardCorrectAnswer(); // points only the first time
             } else {
                 setInputState(input, feedback, 'incorrect');
+                state.incorrect.add(rank);
                 breakStreak();
             }
             saveSession();
@@ -1270,6 +1557,7 @@
             input.id = `answer-${rank}`;
             input.className = 'answer-input';
             input.dataset.correct = problem.result;
+            input.dataset.rank = rank;
             input.tabIndex = rank + 1;
             input.maxLength = 3;
             input.inputMode = 'numeric';
@@ -1287,6 +1575,11 @@
                     const next = $(`answer-${rank + 1}`);
                     if (next) next.focus();
                 }
+            });
+
+            // Time each problem from the moment it is first focused
+            input.addEventListener('focus', () => {
+                if (!input.readOnly) startQuestionTimer(rank);
             });
 
             // Persist half-typed answers too
@@ -1323,14 +1616,30 @@
             const read = (name, fallback) => {
                 let boxes = Array.from(document.querySelectorAll(`input[name="${name}"]`));
                 if (!boxes.some(cb => cb.checked)) {
-                    boxes.forEach(cb => cb.checked = fallback(cb));
+                    boxes.forEach(cb => cb.checked = !cb.disabled && fallback(cb));
                 }
                 return boxes.filter(cb => cb.checked).map(cb => cb.value);
             };
             return {
-                numbers: read('a_number', () => true).map(Number),            // default: 1-10
+                numbers: read('a_number', () => true).map(Number),            // default: 1-10 (5-10 in large-numbers mode)
                 operations: read('operation_type', cb => cb.value === 'multiply') // default: multiply
             };
+        }
+
+        function isLargeNumbersOnly() {
+            return $('large-numbers-toggle').checked;
+        }
+
+        /** Style the toggle and disable (and untick) the number buttons below LARGE_NUMBER_MIN. */
+        function renderLargeNumbers() {
+            const large = isLargeNumbersOnly();
+            setToggleStyle('large-numbers-toggle', $('large-numbers-label'));
+            document.querySelectorAll('input[name="a_number"]').forEach(cb => {
+                if (Number(cb.value) >= LARGE_NUMBER_MIN) return;
+                cb.disabled = large;
+                if (large) cb.checked = false;
+                cb.parentElement.classList.toggle('disabled', large);
+            });
         }
 
         function readProblemCount() {
@@ -1354,15 +1663,48 @@
             layoutProblems();
         }
 
+        /** Start a test with the given problems (sorted if that toggle is on). */
+        function startTest(problems) {
+            state.problems = isSortedOrder() ? sortProblems(problems) : problems;
+            displayProblems(state.problems);
+            setAnswersVisible($('show-results').checked); // also resets score/progress/timing
+            saveSession();
+        }
+
         /** Generate a fresh test from the current controls. */
         function createMathProblems() {
             const { numbers, operations } = readSelections();
-            const problems = generateDistributedProblems(numbers, operations, readProblemCount());
+            startTest(generateDistributedProblems(numbers, operations, readProblemCount(), isLargeNumbersOnly()));
+        }
 
-            state.problems = isSortedOrder() ? sortProblems(problems) : problems;
-            displayProblems(state.problems);
-            setAnswersVisible($('show-results').checked); // also resets score/progress
-            saveSession();
+        // ===== Summary =====
+        function closeSummary() {
+            $('summary-modal').style.display = 'none';
+        }
+
+        function showSummary() {
+            const solved = document.querySelectorAll('.answer-input[data-solved="1"]').length;
+            $('summary-points').textContent = state.points;
+            $('summary-time').textContent = formatDuration(state.finishedAt - state.startedAt);
+            $('summary-correct').textContent = `${solved} av ${state.totalProblems}`;
+            $('summary-streak').textContent = state.highestStreak;
+            $('practice-button').disabled = findStruggledRanks().length === 0;
+            $('summary-modal').style.display = 'flex';
+        }
+
+        /** "Prøv igjen": the same problems once more. */
+        function restartTest() {
+            closeSummary();
+            startTest(state.problems);
+        }
+
+        /** "Bli enda bedre! 💪": a test built from the problems the user struggled with. */
+        function practiceStruggled() {
+            const ranks = findStruggledRanks();
+            if (ranks.length === 0) return;
+            const practiceSet = buildPracticeSet(state.problems, ranks, state.problems.length);
+            closeSummary();
+            startTest(practiceSet);
         }
 
         function toggleAnswers() {
@@ -1395,7 +1737,8 @@
                 return;
             }
             if (el.id === 'problem-count') el.dataset.prev = el.value;
-            if (el.id === 'order-toggle') toggleOrder();
+            if (el.id === 'large-numbers-toggle') { renderLargeNumbers(); createMathProblems(); }
+            else if (el.id === 'order-toggle') toggleOrder();
             else if (el.id === 'show-results') toggleAnswers();
             else createMathProblems();
         }
@@ -1426,6 +1769,7 @@
                         numbers: checkedValues('a_number'),
                         operations: checkedValues('operation_type'),
                         sorted: isSortedOrder(),
+                        largeNumbers: isLargeNumbersOnly(),
                         count: readProblemCount(),
                         showResults: $('show-results').checked
                     },
@@ -1436,9 +1780,27 @@
                         streak: state.streak,
                         highestStreak: state.highestStreak,
                         answered: Array.from(state.answeredIndices)
+                    },
+                    timing: {
+                        elapsed: state.startedAt === null ? null : (state.finishedAt ?? activeNow()) - state.startedAt,
+                        finished: state.finishedAt !== null,
+                        times: state.questionTimes,
+                        incorrect: Array.from(state.incorrect)
                     }
                 }));
             } catch (e) { /* storage unavailable: app still works, just without persistence */ }
+        }
+
+        function restoreTiming(timing) {
+            resetTiming();
+            if (!timing) return; // saved before timing existed
+            const now = activeNow();
+            if (typeof timing.elapsed === 'number') {
+                state.startedAt = now - timing.elapsed;
+                if (timing.finished) state.finishedAt = now;
+            }
+            state.questionTimes = timing.times || {};
+            state.incorrect = new Set(timing.incorrect || []);
         }
 
         /** Rebuild the saved test. Returns false if there is nothing valid to restore. */
@@ -1454,6 +1816,8 @@
             document.querySelectorAll('input[name="a_number"]').forEach(cb => cb.checked = config.numbers.includes(cb.value));
             document.querySelectorAll('input[name="operation_type"]').forEach(cb => cb.checked = config.operations.includes(cb.value));
             $('order-toggle').checked = !!config.sorted;
+            $('large-numbers-toggle').checked = !!config.largeNumbers;
+            renderLargeNumbers();
             if (PROBLEM_COUNT_OPTIONS.includes(Number(config.count))) $('problem-count').value = String(config.count);
             $('problem-count').dataset.prev = $('problem-count').value;
             $('show-results').checked = !!config.showResults;
@@ -1474,6 +1838,7 @@
             state.streak = game.streak;
             state.highestStreak = game.highestStreak;
             state.answeredIndices = new Set(game.answered);
+            restoreTiming(saved.timing);
             renderScore();
             renderProgress();
             setGameVisible(!config.showResults);
@@ -1485,8 +1850,12 @@
         });
 
         window.onload = function() {
+            $('summary-close').addEventListener('click', closeSummary);
+            $('restart-button').addEventListener('click', restartTest);
+            $('practice-button').addEventListener('click', practiceStruggled);
             $('problem-count').dataset.prev = $('problem-count').value;
             setToggleStyle('order-toggle', document.querySelector('#order-toggle + .slider'));
+            renderLargeNumbers();
             let restored = false;
             try { restored = restoreSession(); } catch (e) { /* corrupt save */ }
             if (!restored) createMathProblems();
