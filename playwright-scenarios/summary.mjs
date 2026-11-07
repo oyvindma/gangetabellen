@@ -33,16 +33,24 @@ export default async function ({ page, check, eq, open, screenshot }) {
   const t0 = await page.evaluate(() => state.questionTimes[0]);
   check('hidden time is excluded from the problem time', t0 < 5000, `time=${t0}ms`);
 
-  // Answer the rest: problem 1 wrong, the others right.
+  // Idle: 5 minutes without input (page still visible) is not counted, and one problem is capped.
   eq('modal hidden before all answered', await visible(), false);
+  await page.focus('#answer-1');
+  await page.evaluate(() => { window.__skew += 300000; });
   await answer(1, true);
+  eq('single problem time is capped', await page.evaluate(() => state.questionTimes[1]), 30000);
+
+  // Outliers: one extreme time must not hide the genuinely slow problem (mean+sd would miss rank 2).
+  const slow = await page.evaluate(() => findSlowRanks({ 0: 2000, 1: 2500, 2: 3500, 3: 1800, 4: 30000 }).sort());
+  eq('robust slow detection keeps moderately slow problems', slow, [2, 4]);
+
   for (let i = 2; i < 10; i++) await answer(i, false);
   await page.focus('#answer-9'); await page.locator('#answer-9').blur();
   await page.waitForTimeout(100);
   eq('summary modal shown when all answered', await visible(), true);
   eq('correct count', await page.locator('#summary-correct').textContent(), '9 av 10');
-  const secs = await page.locator('#summary-time').textContent();
-  check('total time excludes the hidden gap', !/minutt/.test(secs), secs);
+  const total = await page.evaluate(() => state.finishedAt - state.startedAt);
+  check('total time excludes hidden and idle gaps', total < 90000, `total=${total}ms`);
   await screenshot('summary');
 
   // Practice: struggled problems (incl. the wrong one) fill a test of the same size.

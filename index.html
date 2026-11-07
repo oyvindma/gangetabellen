@@ -1224,6 +1224,8 @@
         const LARGE_NUMBER_MIN = 5;       // "Kun store tall": both operands must be at least this
         const OPERATOR_SYMBOLS = { multiply: '×', divide: '÷', add: '+', subtract: '−' };
         const BASE_POINTS = 10;
+        const IDLE_MS = 60000;           // no input for this long pauses the clock
+        const MAX_QUESTION_MS = 30000;   // a single problem never counts for more than this
         const STREAK_BONUS_INTERVAL = 5; // +1 point multiplier every 5 correct answers in a row
         const STORAGE_KEY = 'gangetabellen.v1';
         const CONFIRM_MESSAGE = 'Dette fjerner svarene og poengene dine. Vil du fortsette?';
@@ -1248,28 +1250,52 @@
         const $ = id => document.getElementById(id);
 
         // ===== Active clock =====
-        // Does not advance while the page is hidden (screen off, tab/app switched) or the
-        // window is unfocused, so such gaps are never counted as time spent on a problem.
-        // Uses Date.now() (not performance.now(), which may stop during device sleep).
-        let pausedTotal = 0; // ms spent paused so far
-        let pausedAt = null; // Date.now() when the current pause began, else null
+        // Does not advance while the page is hidden (screen off, tab/app switched), the
+        // window is unfocused, or the user has been idle for IDLE_MS, so such gaps are never
+        // counted as time spent on a problem. Uses Date.now() (not performance.now(), which
+        // may stop during device sleep).
+        let pausedTotal = 0;             // ms of settled pauses so far
+        let pausedAt = null;             // Date.now() when the page became hidden/unfocused, else null
+        let lastActivity = Date.now();   // last user input (or the page becoming visible again)
+
+        /** Start of the pause in progress (hidden, unfocused or idle), or null while active. */
+        function pauseStart(now) {
+            const idleStart = lastActivity + IDLE_MS;
+            if (pausedAt !== null) return Math.min(pausedAt, idleStart);
+            return now > idleStart ? idleStart : null;
+        }
 
         function activeNow() {
             const now = Date.now();
-            return now - pausedTotal - (pausedAt !== null ? now - pausedAt : 0);
+            const start = pauseStart(now);
+            return now - pausedTotal - (start !== null ? now - start : 0);
+        }
+
+        /** Call on any user input: ends an idle pause (the first IDLE_MS of idling still counts). */
+        function noteActivity() {
+            const now = Date.now();
+            if (pausedAt === null) {
+                const start = pauseStart(now);
+                if (start !== null) pausedTotal += now - start;
+                lastActivity = now;
+            }
         }
 
         function syncClock() {
+            const now = Date.now();
             const active = document.visibilityState === 'visible' && document.hasFocus();
             if (!active && pausedAt === null) {
-                pausedAt = Date.now();
+                pausedAt = now;
             } else if (active && pausedAt !== null) {
-                pausedTotal += Date.now() - pausedAt;
+                pausedTotal += now - pauseStart(now);
                 pausedAt = null;
+                lastActivity = now; // coming back counts as being present
             }
         }
         ['visibilitychange', 'blur', 'focus', 'pagehide', 'pageshow']
             .forEach(ev => window.addEventListener(ev, syncClock));
+        ['keydown', 'input', 'pointerdown', 'touchstart', 'focusin']
+            .forEach(ev => document.addEventListener(ev, noteActivity, true));
         syncClock();
 
         // ===== Problem model (no markup here) =====
@@ -1384,14 +1410,24 @@
         }
 
         // ===== Practice analysis (pure data, no DOM) =====
-        /** Ranks whose time exceeds mean + 0.5 standard deviation of all recorded times. */
+        function median(values) {
+            const sorted = [...values].sort((x, y) => x - y);
+            const mid = sorted.length >> 1;
+            return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+        }
+
+        /**
+         * Ranks whose time is well above the typical time. Uses the median and the median
+         * absolute deviation (MAD) rather than mean and standard deviation, so a few extreme
+         * times cannot inflate the threshold and hide the genuinely slow problems.
+         */
         function findSlowRanks(timesByRank) {
             const entries = Object.entries(timesByRank);
             if (entries.length === 0) return [];
             const times = entries.map(([, ms]) => ms);
-            const mean = times.reduce((sum, t) => sum + t, 0) / times.length;
-            const variance = times.reduce((sum, t) => sum + (t - mean) ** 2, 0) / times.length;
-            const threshold = mean + 0.5 * Math.sqrt(variance);
+            const typical = median(times);
+            const spread = 1.4826 * median(times.map(t => Math.abs(t - typical))); // ≈ std dev for normal data
+            const threshold = typical + 0.5 * spread;
             return entries.filter(([, ms]) => ms > threshold).map(([rank]) => Number(rank));
         }
 
@@ -1476,10 +1512,10 @@
             if (state.questionStart[rank] === undefined) state.questionStart[rank] = activeNow();
         }
 
-        /** Record how long a problem took, the first time it gets an answer. */
+        /** Record how long a problem took (capped at MAX_QUESTION_MS), the first time it gets an answer. */
         function recordQuestionTime(rank) {
             if (state.questionStart[rank] === undefined || state.questionTimes[rank] !== undefined) return;
-            state.questionTimes[rank] = activeNow() - state.questionStart[rank];
+            state.questionTimes[rank] = Math.min(activeNow() - state.questionStart[rank], MAX_QUESTION_MS);
         }
 
         function resetGameState() {
