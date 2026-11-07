@@ -352,6 +352,31 @@
         .toggle-container:hover {
             transform: translateY(-3px);
         }
+
+        .clear-button {
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+            background-color: var(--secondary-color);
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            min-width: 120px;
+            max-width: 160px;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            align-self: center;
+        }
+
+        .clear-button:hover {
+            filter: brightness(0.95);
+        }
+
+        @media (min-width: 576px) {
+            .clear-button { width: auto; min-width: 140px; }
+        }
         
         .toggle-switch {
             position: relative;
@@ -876,19 +901,19 @@
                 <p>Velg regnearter:</p>
                 <div>
                     <label>
-                        <input type="checkbox" name="operation_type" value="multiply" checked onchange="createMathProblems()">
+                        <input type="checkbox" name="operation_type" value="multiply" checked onchange="onConfigChange(this)">
                         <span>Multiplikasjon (×)</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="operation_type" value="divide" onchange="createMathProblems()">
+                        <input type="checkbox" name="operation_type" value="divide" onchange="onConfigChange(this)">
                         <span>Divisjon (÷)</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="operation_type" value="add" onchange="createMathProblems()">
+                        <input type="checkbox" name="operation_type" value="add" onchange="onConfigChange(this)">
                         <span>Addisjon (+)</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="operation_type" value="subtract" onchange="createMathProblems()">
+                        <input type="checkbox" name="operation_type" value="subtract" onchange="onConfigChange(this)">
                         <span>Subtraksjon (−)</span>
                     </label>
                 </div>
@@ -897,43 +922,43 @@
                 <p>Velg tallområde (for faktorer/operander):</p>
                 <div>
                     <label>
-                        <input type="checkbox" name="a_number" value="1" checked onchange="createMathProblems()">
+                        <input type="checkbox" name="a_number" value="1" checked onchange="onConfigChange(this)">
                         <span>1</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="2" checked onchange="createMathProblems()">
+                        <input type="checkbox" name="a_number" value="2" checked onchange="onConfigChange(this)">
                         <span>2</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="3" checked onchange="createMathProblems()">
+                        <input type="checkbox" name="a_number" value="3" checked onchange="onConfigChange(this)">
                         <span>3</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="4" checked onchange="createMathProblems()">
+                        <input type="checkbox" name="a_number" value="4" checked onchange="onConfigChange(this)">
                         <span>4</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="5" checked onchange="createMathProblems()">
+                        <input type="checkbox" name="a_number" value="5" checked onchange="onConfigChange(this)">
                         <span>5</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="6" checked onchange="createMathProblems()">
+                        <input type="checkbox" name="a_number" value="6" checked onchange="onConfigChange(this)">
                         <span>6</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="7" checked onchange="createMathProblems()">
+                        <input type="checkbox" name="a_number" value="7" checked onchange="onConfigChange(this)">
                         <span>7</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="8" checked onchange="createMathProblems()">
+                        <input type="checkbox" name="a_number" value="8" checked onchange="onConfigChange(this)">
                         <span>8</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="9" checked onchange="createMathProblems()">
+                        <input type="checkbox" name="a_number" value="9" checked onchange="onConfigChange(this)">
                         <span>9</span>
                     </label>
                     <label>
-                        <input type="checkbox" name="a_number" value="10" checked onchange="createMathProblems()">
+                        <input type="checkbox" name="a_number" value="10" checked onchange="onConfigChange(this)">
                         <span>10</span>
                     </label>
                 </div>
@@ -942,17 +967,18 @@
                 <div class="toggle-container">
                     <span class="toggle-label">Sortert rekkefølge</span>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="order-toggle" onchange="toggleOrder()">
+                        <input type="checkbox" id="order-toggle" onchange="onConfigChange(this)">
                         <span class="slider"></span>
                     </label>
                 </div>
                 <div class="toggle-container show-answers">
                     <span class="toggle-label" id="show-answers-label">Vis svar</span>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="show-results" onchange="toggleAnswers()">
+                        <input type="checkbox" id="show-results" onchange="onConfigChange(this)">
                         <span class="slider"></span>
                     </label>
                 </div>
+                <button type="button" id="clear-btn" class="clear-button no-print" onclick="clearTest()">Nullstill</button>
                 <!-- Hidden input for interactive mode, always checked -->
                 <input type="checkbox" id="interactive-mode" checked style="display: none;">
             </div>
@@ -986,9 +1012,12 @@
         const OPERATOR_SYMBOLS = { multiply: '×', divide: '÷', add: '+', subtract: '−' };
         const BASE_POINTS = 10;
         const STREAK_BONUS_INTERVAL = 5; // +1 point multiplier every 5 correct answers in a row
+        const STORAGE_KEY = 'gangetabellen.v1';
+        const CONFIRM_MESSAGE = 'Dette fjerner svarene og poengene dine. Vil du fortsette?';
 
         // ===== State =====
         const state = {
+            problems: [],               // the problems of the current test, in display order
             totalProblems: 0,
             answeredIndices: new Set(), // problems the user has answered at least once
             points: 0,
@@ -1169,6 +1198,7 @@
             if (state.answeredIndices.has(index)) return;
             state.answeredIndices.add(index);
             renderProgress();
+            saveSession();
         }
 
         function awardCorrectAnswer() {
@@ -1207,6 +1237,7 @@
                 setInputState(input, feedback, 'incorrect');
                 breakStreak();
             }
+            saveSession();
         }
 
         function createInteractiveProblem(container, problem, rank) {
@@ -1235,6 +1266,9 @@
                     if (next) next.focus();
                 }
             });
+
+            // Persist half-typed answers too
+            input.addEventListener('input', saveSession);
 
             // Also check when the input loses focus
             input.addEventListener('blur', () => {
@@ -1298,17 +1332,120 @@
             const { numbers, operations } = readSelections();
             const problems = generateDistributedProblems(numbers, operations, TOTAL_PROBLEMS_COUNT);
 
-            displayProblems(isSortedOrder() ? sortProblems(problems) : problems);
+            state.problems = isSortedOrder() ? sortProblems(problems) : problems;
+            displayProblems(state.problems);
             setAnswersVisible($('show-results').checked); // also resets score/progress
+            saveSession();
         }
 
         function toggleAnswers() {
             setAnswersVisible($('show-results').checked);
+            saveSession();
         }
 
         function toggleOrder() {
             setToggleStyle('order-toggle', document.querySelector('#order-toggle + .slider'));
             createMathProblems();
+        }
+
+        // ===== Progress guard =====
+        /** True when the user has typed answers that a reset would throw away. */
+        function hasProgress() {
+            // Read-only inputs hold shown answers, not the user's work (and the toggle
+            // may already have flipped when this runs from its change handler).
+            return Array.from(document.querySelectorAll('.answer-input')).some(input => !input.readOnly && input.value !== '');
+        }
+
+        function confirmDiscardProgress() {
+            return !hasProgress() || window.confirm(CONFIRM_MESSAGE);
+        }
+
+        /** Every settings control routes through here: confirm first, revert the control if declined. */
+        function onConfigChange(el) {
+            if (!confirmDiscardProgress()) {
+                el.checked = !el.checked;
+                return;
+            }
+            if (el.id === 'order-toggle') toggleOrder();
+            else if (el.id === 'show-results') toggleAnswers();
+            else createMathProblems();
+        }
+
+        function clearTest() {
+            if (!confirmDiscardProgress()) return;
+            createMathProblems(); // fresh test; also saves the empty session
+        }
+
+        // ===== Persistence =====
+        function checkedValues(name) {
+            return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
+        }
+
+        function saveSession() {
+            try {
+                const inputs = Array.from(document.querySelectorAll('.problem-container'))
+                    .sort((x, y) => x.dataset.rank - y.dataset.rank)
+                    .map(container => {
+                        const input = container.querySelector('.answer-input');
+                        const stateName = Object.keys(INPUT_STATES).find(
+                            key => INPUT_STATES[key].className && input.classList.contains(INPUT_STATES[key].className)
+                        ) || 'idle';
+                        return { value: input.value, state: stateName };
+                    });
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                    config: {
+                        numbers: checkedValues('a_number'),
+                        operations: checkedValues('operation_type'),
+                        sorted: isSortedOrder(),
+                        showResults: $('show-results').checked
+                    },
+                    problems: state.problems,
+                    answers: inputs,
+                    game: {
+                        points: state.points,
+                        streak: state.streak,
+                        highestStreak: state.highestStreak,
+                        answered: Array.from(state.answeredIndices)
+                    }
+                }));
+            } catch (e) { /* storage unavailable: app still works, just without persistence */ }
+        }
+
+        /** Rebuild the saved test. Returns false if there is nothing valid to restore. */
+        function restoreSession() {
+            let saved;
+            try {
+                saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+            } catch (e) { return false; }
+            if (!saved || !Array.isArray(saved.problems) || !saved.problems.length ||
+                !Array.isArray(saved.answers) || saved.answers.length !== saved.problems.length) return false;
+
+            const { config, game } = saved;
+            document.querySelectorAll('input[name="a_number"]').forEach(cb => cb.checked = config.numbers.includes(cb.value));
+            document.querySelectorAll('input[name="operation_type"]').forEach(cb => cb.checked = config.operations.includes(cb.value));
+            $('order-toggle').checked = !!config.sorted;
+            $('show-results').checked = !!config.showResults;
+            setToggleStyle('order-toggle', document.querySelector('#order-toggle + .slider'));
+            setToggleStyle('show-results', $('show-answers-label'));
+
+            state.problems = saved.problems;
+            displayProblems(state.problems);
+            document.querySelectorAll('.problem-container').forEach(container => {
+                const input = container.querySelector('.answer-input');
+                const answer = saved.answers[container.dataset.rank];
+                input.value = answer.value;
+                input.readOnly = !!config.showResults;
+                setInputState(input, container._feedback, INPUT_STATES[answer.state] ? answer.state : 'idle');
+            });
+
+            state.points = game.points;
+            state.streak = game.streak;
+            state.highestStreak = game.highestStreak;
+            state.answeredIndices = new Set(game.answered);
+            renderScore();
+            renderProgress();
+            setGameVisible(!config.showResults);
+            return true;
         }
 
         window.addEventListener('resize', () => {
@@ -1317,7 +1454,9 @@
 
         window.onload = function() {
             setToggleStyle('order-toggle', document.querySelector('#order-toggle + .slider'));
-            createMathProblems();
+            let restored = false;
+            try { restored = restoreSession(); } catch (e) { /* corrupt save */ }
+            if (!restored) createMathProblems();
         };
     </script>
 </body>
