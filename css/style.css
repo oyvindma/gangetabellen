@@ -1,0 +1,1045 @@
+/* Common variables - Colorblind-Friendly & Engaging Palette */
+:root {
+    --primary-color: #007BFF;      /* Vibrant Blue */
+    --secondary-color: #FD7E14;    /* Bright Orange */
+    --accent-color: #DC3545;       /* Red (for incorrect) */
+    --accent-color-2: #FFC107;     /* Amber (for focus/highlight) */
+    --background-color: #F8F9FA;   /* Light Gray */
+    --card-color: #FFFFFF;         /* White */
+    --text-color: #212529;         /* Dark Gray */
+    --correct-color: #198754;      /* Dark Green (for correct) */
+    --incorrect-color: #DC3545;    /* Red (already defined as accent) */
+    --spacing-sm: 10px;
+    --spacing-md: 15px;
+    --spacing-lg: 20px;
+    --radius-md: 10px;
+    --radius-lg: 15px;
+}
+
+/* ============= SCREEN STYLES ============= */
+/* These styles apply only to screen viewing (not printing) */
+@media screen {
+    html, body {
+        width: 100%;
+        max-width: 100vw;
+    }
+    
+    body {
+        font-family: 'Nunito', sans-serif;
+        margin: 0;
+        padding: 10px;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        line-height: 1.6;
+        box-sizing: border-box;
+    }
+    
+    *, *:before, *:after {
+        box-sizing: inherit; /* Ensure all elements include padding in width calculations */
+    }
+    
+    .container {
+        width: 100%;
+        max-width: 100%; /* Allow container to shrink with viewport */
+        min-height: auto; /* Allow container to adjust based on content */
+        height: auto; /* Allow container to grow with content */
+        margin: 0 auto;
+        padding: 15px;
+        position: relative;
+        background-color: var(--card-color);
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Responsive padding adjustments */
+    @media (min-width: 768px) {
+        body {
+            padding: 20px;
+        }
+        
+        .container {
+            padding: 20px;
+            max-width: 95%;
+        }
+    }
+    
+    @media (min-width: 992px) {
+        .container {
+            padding: 10mm;
+            max-width: 90%;
+        }
+    }
+    
+    @media (min-width: 1200px) {
+        .container {
+            max-width: 1140px;
+        }
+    }
+}
+
+h1 {
+    font-family: 'Fredoka One', cursive;
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 1.8rem;
+    color: var(--primary-color);
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive heading */
+@media (min-width: 576px) {
+    h1 {
+        font-size: 2.2rem;
+        margin-bottom: 20px;
+    }
+}
+
+@media (min-width: 768px) {
+    h1 {
+        font-size: 2.5rem;
+        margin-bottom: 8mm;
+    }
+}
+
+/* ============= SHARED STYLES ============= */
+/* Styles that apply to both screen and print */
+
+/* Problems grid layout */
+.problems-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Default to 1 column on small screens */
+    grid-gap: 5px 10px;
+    padding: 10px;
+}
+
+/* Responsive grid adjustments */
+@media (min-width: 576px) {
+    .problems-list {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns on small tablets */
+    }
+}
+
+@media (min-width: 768px) {
+    .problems-list {
+        grid-template-columns: repeat(3, 1fr); /* 3 columns on tablets */
+        padding: 15px;
+    }
+}
+
+@media (min-width: 992px) {
+    .problems-list {
+        grid-template-columns: repeat(4, 1fr); /* 4 columns on desktop */
+    }
+}
+
+/* Screen-specific styling for problems list */
+@media screen {
+    .problems-list {
+        background-color: #f9f9f9;
+        border-radius: 10px;
+        box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.05);
+        height: auto; /* Allow height to grow with content */
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+.problem {
+    margin-bottom: 14px; /* Increased line spacing */
+    font-size: 14pt; /* Increased font size */
+    font-weight: bold;
+    padding: 5px 8px;
+    font-family: 'Nunito', sans-serif;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    width: 100%; /* Ensure it takes full width when wrapping */
+    word-wrap: break-word; /* Allow long equations to wrap */
+    overflow-wrap: break-word;
+}
+
+.problem:hover {
+    background-color: rgba(77, 150, 255, 0.1);
+}
+
+/* Styles for aligned operators */
+.number-part {
+    display: inline-block;
+    width: 2ch;
+    text-align: right;
+    min-width: 1.5ch;
+}
+
+.operator {
+    display: inline-block;
+    width: 3ch;
+    text-align: center;
+    color: var(--accent-color);
+    min-width: 1.5ch;
+}
+
+/* Responsive equation parts */
+@media (max-width: 400px) {
+    .number-part, .operator {
+        margin-right: 1px;
+        margin-left: 1px;
+    }
+}
+
+.answer-space {
+    display: inline-block;
+    width: 35px;
+    border-bottom: 2px solid var(--primary-color);
+    margin-left: 3px;
+}
+
+
+
+.controls {
+    margin: 10px 0 20px 0;
+    text-align: center;
+    background: linear-gradient(145deg, #f0f9ff, #e6f7ff);
+    padding: 15px 10px;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Responsive controls adjustments */
+@media (min-width: 768px) {
+    .controls {
+        padding: 20px;
+    }
+}
+
+/* Center the operation and number selection buttons */
+.operation-selection > div,
+.number-selection > div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 0 auto;
+}
+
+/* Colorful and engaging buttons for operations and numbers */
+.operation-selection label,
+.number-selection label {
+    background: white;
+    border-radius: 25px;
+    padding: 8px 15px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+/* Operation buttons with different colors */
+.operation-selection label:nth-child(1) {
+    background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
+    border-color: #4dd0e1;
+}
+
+.operation-selection label:nth-child(2) {
+    background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+    border-color: #ba68c8;
+}
+
+.operation-selection label:nth-child(3) {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    border-color: #66bb6a;
+}
+
+.operation-selection label:nth-child(4) {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    border-color: #ffa726;
+}
+
+/* Responsive operation buttons */
+@media (max-width: 576px) {
+    .operation-selection label {
+        font-size: 0.9em;
+        padding: 6px 10px;
+        margin-bottom: 5px;
+        width: calc(50% - 15px); /* Two buttons per row on very small screens */
+    }
+}
+
+/* Number buttons with a gradient of blues */
+.number-selection label {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    border-color: #64b5f6;
+}
+
+/* Responsive number buttons */
+@media (max-width: 576px) {
+    .number-selection label {
+        font-size: 0.9em;
+        padding: 6px 8px;
+        margin: 2px;
+        min-width: 30px;
+    }
+}
+
+/* Hover effects */
+.operation-selection label:hover,
+.number-selection label:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Checked state */
+.operation-selection input[type="checkbox"]:checked + span::before,
+.number-selection input[type="checkbox"]:checked + span::before {
+    content: "✓";
+    margin-right: 5px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.controls label {
+    margin-right: 15px;
+    font-size: 12pt;
+    cursor: pointer;
+}
+
+/* Toggle switch styles */
+.toggles-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.toggle-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: white;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    min-width: 120px;
+    width: 100%;
+    max-width: 160px;
+    transition: transform 0.2s;
+}
+
+/* Responsive toggle container adjustments */
+@media (min-width: 576px) {
+    .toggles-container {
+        gap: 15px;
+        margin-top: 20px;
+        justify-content: space-around;
+    }
+    
+    .toggle-container {
+        padding: 15px;
+        min-width: 140px;
+        width: auto;
+    }
+}
+
+.toggle-container:hover {
+    transform: translateY(-3px);
+}
+
+.clear-button {
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 1rem;
+    color: white;
+    background-color: var(--secondary-color);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 20px;
+    min-width: 120px;
+    max-width: 160px;
+    width: 100%;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    align-self: center;
+}
+
+.clear-button:hover {
+    filter: brightness(0.95);
+}
+
+@media (min-width: 576px) {
+    .clear-button { width: auto; min-width: 140px; }
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    margin: 0 10px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+/* Default toggle color */
+input:checked + .slider {
+    background-color: var(--primary-color);
+}
+
+/* Special colors for different toggles */
+.show-answers input:checked + .slider {
+    background-color: var(--accent-color);
+}
+
+.interactive-mode input:checked + .slider {
+    background-color: var(--secondary-color);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.toggle-label {
+    font-size: 1rem;
+    font-weight: bold;
+    margin: 0 10px;
+    text-align: center;
+    color: var(--text-color);
+}
+
+/* Active label color for sorting toggle */
+.count-select {
+    margin-top: 6px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 2px solid #ccc;
+    color: var(--text-color);
+    background: white;
+}
+
+.toggle-label.active {
+    color: #2196F3;
+}
+
+/* Keep text color unchanged for show-answers and interactive-mode toggles */
+.show-answers .toggle-label,
+.interactive-mode .toggle-label {
+    color: inherit;
+}
+
+.show-answers, .interactive-mode {
+    margin-top: 15px;
+}
+
+/* Disabled number buttons (large-numbers mode) */
+.number-selection label.disabled {
+    background: #ccc;
+    border-color: #999;
+    cursor: not-allowed;
+}
+
+.number-selection label.disabled span {
+    color: #555;
+}
+
+/* Problem layout styles */
+.problems-list {
+    display: grid;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.problem-container {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 6px 8px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* Responsive problem containers */
+@media (min-width: 576px) {
+    .problem-container {
+        padding: 8px 10px;
+    }
+}
+
+@media (min-width: 768px) {
+    .problem-container {
+        padding: 8px 12px;
+    }
+}
+
+.problem-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.problem-container label {
+    margin-right: 8px;
+    font-weight: 500;
+}
+
+.problem-container .feedback {
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+/* Styles for interactive mode */
+.answer-input {
+    width: 40px;
+    height: 28px;
+    font-size: 14pt;
+    text-align: center;
+    background-color: transparent;
+    border: none;
+    border-bottom: 2px solid var(--primary-color);
+    padding: 2px 5px;
+    /* Remove spinner buttons */
+    appearance: textfield;
+    -moz-appearance: textfield;
+    transition: border-color 0.3s;
+    margin-top: 2px; /* Add space when wrapping */
+}
+
+/* Responsive input field */
+@media (max-width: 400px) {
+    .answer-input {
+        width: 35px;
+        height: 26px;
+        font-size: 13pt;
+    }
+}
+
+@media (min-width: 576px) {
+    .answer-input {
+        width: 45px;
+    }
+}
+
+.answer-input:focus {
+    outline: none;
+    border-color: var(--accent-color-2); /* Amber focus */
+    box-shadow: none;
+}
+
+/* Remove spinner buttons in WebKit browsers (Chrome, Safari, Edge) */
+.answer-input::-webkit-outer-spin-button,
+.answer-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.correct-answer {
+    color: var(--correct-color);
+    font-weight: bold;
+    position: relative;
+    border-color: var(--correct-color);
+    background-color: rgba(25, 135, 84, 0.05); /* Light green background */
+}
+
+.correct-answer::before {
+    content: "✓";
+    margin-right: 3px;
+}
+
+.incorrect-answer {
+    color: var(--incorrect-color);
+    font-weight: bold;
+    position: relative;
+    border-color: var(--incorrect-color);
+    background-color: rgba(220, 53, 69, 0.05); /* Light red background */
+}
+
+.incorrect-answer::before {
+    content: "✗";
+    margin-right: 3px;
+}
+
+.invalid-answer {
+    color: orange;
+    font-weight: bold;
+    border-color: orange;
+    background-color: transparent;
+}
+
+.feedback {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+/* Style feedback colors specifically */
+.correct-answer + .feedback {
+    color: var(--correct-color);
+}
+
+.incorrect-answer + .feedback {
+     color: var(--incorrect-color);
+}
+
+.number-selection {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.number-selection label {
+    margin-right: 8px;
+    font-size: 12pt;
+    display: inline-block;
+    width: 30px;
+    text-align: center;
+}
+
+.number-selection input {
+    margin-right: 3px;
+}
+
+.number-selection label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 50%;
+    background-color: var(--accent-color-2);
+    color: var(--text-color);
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin: 0 5px 5px 0;
+}
+
+.number-selection label:hover {
+    transform: translateY(-3px);
+    background-color: #FFE566;
+}
+
+.number-selection p,
+.operation-selection p {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--primary-color);
+}
+
+.number-selection div,
+.operation-selection div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px; /* Add some space below the selections */
+}
+
+.number-selection label,
+.operation-selection label {
+    display: flex;
+    align-items: center;
+    background-color: #e9ecef;
+    padding: 5px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.number-selection label:hover,
+.operation-selection label:hover {
+    background-color: #ced4da;
+}
+
+.number-selection input[type="checkbox"],
+.operation-selection input[type="checkbox"] {
+    display: none; /* Hide default checkbox */
+}
+
+.number-selection input[type="checkbox"]:checked + span,
+.operation-selection input[type="checkbox"]:checked + span {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.number-selection span,
+.operation-selection span {
+    margin-left: 5px;
+    font-size: 0.95em;
+}
+
+/* Gamification Styles */
+.gamification-panel {
+    display: none; /* Hidden by default, shown in interactive mode */
+    background-color: rgba(255, 255, 255, 0.98);
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin: 10px auto;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    width: 95%;
+    max-width: 600px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    font-weight: bold;
+    border: 1px solid rgba(77, 150, 255, 0.3);
+    background-image: linear-gradient(to bottom, #ffffff, #f5f9ff);
+}
+
+.points-container, .streak-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.points-label, .streak-label {
+    font-size: 1.1rem;
+    color: #555;
+}
+
+.points-value {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    min-width: 50px;
+    text-align: center;
+}
+
+.streak-value {
+    font-size: 1.5rem;
+    color: var(--secondary-color);
+    min-width: 30px;
+    text-align: center;
+}
+
+.highest-streak {
+    font-size: 0.9rem;
+    color: #777;
+    font-style: italic;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.points-increase {
+    animation: pulse 0.5s ease;
+}
+
+/* Progress Bar Styles */
+.progress-container {
+    width: 100%;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    margin: 20px auto;
+    height: 20px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.1);
+    display: none; /* Hidden by default, shown in interactive mode */
+    position: sticky;
+    top: 0px;
+    z-index: 100;
+    padding: 5px;
+    background-color: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(77, 150, 255, 0.3);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15), inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    /* Add gradient background for better contrast */
+    background-image: linear-gradient(to bottom, #ffffff, #f5f9ff);
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%; /* Start at 0% */
+    background-color: var(--correct-color); /* Orange progress bar */
+    border-radius: 5px;
+    transition: width 0.4s ease;
+}
+
+/* Class specifically for elements that shouldn't print */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+
+/* ============= PRINT STYLES ============= */
+@media print {
+    /* Reset body styles for print */
+    body {
+        font-family: 'Nunito', sans-serif;
+        background: white;
+        margin: 0;
+        padding: 0;
+        font-size: 10pt; /* Smaller base font size for print */
+    }
+    
+    /* Reset container styles for print */
+    .container {
+        width: 210mm; /* A4 width */
+        height: auto; /* Auto height */
+        max-height: 297mm; /* Maximum A4 height */
+        margin: 0;
+        padding: 5mm; /* Reduced padding */
+        box-shadow: none;
+        border-radius: 0;
+        background-color: white;
+    }
+    
+    /* Reset problems list styles for print */
+    .problems-list {
+        background-color: white;
+        box-shadow: none;
+        padding: 0;
+        grid-gap: 3px 6px; /* Slightly reduced grid gap */
+        grid-template-columns: repeat(4, 1fr); /* Keep 4 columns */
+    }
+    
+    /* Set page size with small margins */
+    @page {
+        size: A4;
+        margin: 3mm; /* Small margin */
+    }
+    
+    /* Hide controls, gamification elements, and decorative elements */
+    .controls, .math-symbols, .gamification-panel, .progress-container, .no-print {
+        display: none;
+    }
+    
+    /* Remove hover effects */
+    .problem:hover {
+        background-color: transparent;
+    }
+    
+    /* Print-friendly styles for interactive elements */
+    .answer-input {
+        border: none;
+        border-bottom: 1px solid #000; /* Black bottom border for print */
+        background: transparent;
+        width: 32px; /* Slightly wider */
+        height: 20px; /* Taller input field */
+        font-size: 12pt; /* Increased font size to match problem text */
+        margin-left: 2px; /* Small left margin */
+    }
+    
+    /* Hide feedback elements in print */
+    .feedback {
+        display: none;
+    }
+    
+    /* Ensure problem spacing is optimized for print */
+    .problem {
+        margin-bottom: 6px; /* Slightly increased margin */
+        padding: 0;
+        font-size: 12pt; /* Increased font size */
+        line-height: 1.3; /* Slightly increased line height */
+    }
+    
+    /* Optimize problem container for print */
+    .problem-container {
+        padding: 4px 6px; /* Increased padding */
+        margin-bottom: 4px; /* Increased margin */
+        box-shadow: none;
+        min-height: 26px; /* Ensure minimum height for taller problems */
+    }
+    
+    /* Header and footer adjustments */
+    h1 {
+        font-size: 22pt; /* Larger header */
+        margin-top: 0;
+        margin-bottom: 5mm; /* Slightly increased margin */
+        font-weight: bold; /* Ensure bold weight */
+    }
+    
+    .footer {
+        margin-top: 2mm; /* Slightly reduced margin */
+        font-size: 9pt; /* Slightly smaller font */
+    }
+}
+
+.interactive-mode .problem {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+
+.interactive-mode .answer-input {
+    margin-left: 5px;
+}
+
+.footer p span {
+    color: var(--secondary-color); /* Orange emphasis in footer */
+}
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: var(--card-color);
+    margin: auto;
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+.practice-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.practice-button {
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.practice-button:hover {
+    background-color: #e67300;
+    transform: translateY(-2px);
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.close-button {
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-md);
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+.close-button:hover {
+    color: var(--accent-color);
+}
+
+.modal h2 {
+    text-align: center;
+    color: var(--primary-color);
+    margin-top: 0;
+    margin-bottom: var(--spacing-lg);
+    font-family: 'Fredoka One', cursive;
+}
+
+.summary-stats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--background-color);
+    border-radius: var(--radius-md);
+}
+
+.summary-label {
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.summary-value {
+    font-weight: bold;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.restart-button {
+    display: block;
+    width: 100%;
+    padding: var(--spacing-md);
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: 'Nunito', sans-serif;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.restart-button:hover {
+    background-color: #e06c00;
+}
+
+.practice-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+@media print {
+    .modal { display: none !important; }
+}
