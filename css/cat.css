@@ -1,0 +1,657 @@
+/* Gangetabellen: a cosy cat theme for older kids.
+   Pastel lilac page with scattered paw prints, flat "sticker" shadows, colour-coded
+   operation chips, and a progress path where a little cat walks. Original artwork. */
+
+:root {
+    --font: 'Baloo 2', 'Trebuchet MS', system-ui, sans-serif;
+
+    --mist: #e6e9ff;
+    --milk: #ffffff;
+    --ink: #3a3157;
+    --ink-soft: #6b6590;
+    --line: #d6cdf8;
+    --tile: #f4f1ff;
+
+    --pink: #ff6fa5;
+    --pink-soft: #ffd3e4;
+    --pink-deep: #d92f73;
+    --lilac: #7a5af0;
+    --lilac-soft: #e3dbff;
+    --mint: #34c79a;
+    --mint-soft: #cdf5e6;
+    --mint-deep: #148a65;
+    --butter: #ffc94d;
+    --butter-soft: #fff0c2;
+    --coral: #f2545b;
+    --coral-soft: #ffd9da;
+
+    --focus: #7a5af0;
+    --sticker: 0 6px 0 #cfc7f5;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { font-size: 106.25%; scroll-padding-top: 110px; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: var(--font);
+    line-height: 1.35;
+    color: var(--ink);
+    background-color: var(--mist);
+    /* Scattered paw prints */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='%23fff' fill-opacity='.75'%3E%3Cg transform='translate(30 34) rotate(-20) scale(1.3)'%3E%3Cellipse cx='0' cy='4' rx='7' ry='6'/%3E%3Cellipse cx='-8' cy='-5' rx='2.8' ry='3.6'/%3E%3Cellipse cx='-3' cy='-9' rx='2.8' ry='3.6'/%3E%3Cellipse cx='3' cy='-9' rx='2.8' ry='3.6'/%3E%3Cellipse cx='8' cy='-5' rx='2.8' ry='3.6'/%3E%3C/g%3E%3Cg transform='translate(90 94) rotate(25) scale(1.3)'%3E%3Cellipse cx='0' cy='4' rx='7' ry='6'/%3E%3Cellipse cx='-8' cy='-5' rx='2.8' ry='3.6'/%3E%3Cellipse cx='-3' cy='-9' rx='2.8' ry='3.6'/%3E%3Cellipse cx='3' cy='-9' rx='2.8' ry='3.6'/%3E%3Cellipse cx='8' cy='-5' rx='2.8' ry='3.6'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+:focus-visible {
+    outline: 4px solid var(--focus);
+    outline-offset: 3px;
+}
+
+.container {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 36px 14px 48px;
+}
+
+/* ===== Header ===== */
+.hero {
+    text-align: center;
+    margin-bottom: 76px; /* room for the cat peeking over the panel */
+}
+
+.title {
+    margin: 0;
+    font-size: clamp(2.4rem, 9vw, 4.2rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: 0.01em;
+    color: var(--ink);
+    text-shadow: 4px 4px 0 var(--pink-soft);
+}
+
+.hero-hint {
+    margin: 8px 0 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+
+/* ===== Panels ===== */
+.panel {
+    background: var(--milk);
+    border: 3px solid var(--line);
+    border-radius: 28px;
+    box-shadow: var(--sticker);
+    padding: 18px;
+}
+
+@media (min-width: 900px) {
+    .panel { padding: 26px; }
+}
+
+.controls { position: relative; margin-bottom: 30px; }
+
+.peek-cat {
+    position: absolute;
+    right: 8%;
+    bottom: calc(100% - 9px);
+    width: 112px;
+    height: auto;
+    pointer-events: none;
+    z-index: 2;
+    overflow: visible;
+}
+
+@media (min-width: 640px) { .peek-cat { width: 150px; right: 10%; } }
+
+.group-title {
+    margin: 0 0 10px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.pickers { display: grid; gap: 22px; }
+
+@media (min-width: 900px) {
+    .pickers { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 36px; }
+    .bubble-face { aspect-ratio: auto; min-height: 58px; border-radius: 999px; }
+}
+
+/* ===== Operation chips ===== */
+.operation-selection { display: flex; flex-direction: column; }
+
+.chips {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.chip, .bubble { position: relative; display: block; cursor: pointer; }
+
+/* The real checkbox covers the control, invisible, so clicks and keyboard still work */
+.chip input, .bubble input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: inherit;
+}
+
+.chip-face {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 100%;
+    min-height: 104px;
+    padding: 10px 4px;
+    background: var(--milk);
+    border: 3px solid var(--line);
+    border-radius: 22px;
+    transition: transform 0.15s, background-color 0.15s, border-color 0.15s;
+}
+
+.sym {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+    border-radius: 50%;
+    color: var(--c-deep);
+    background: var(--c-soft);
+}
+
+.chip-name { font-size: 1.1rem; font-weight: 600; color: var(--ink-soft); }
+
+.op-multiply { --c: var(--pink);   --c-soft: var(--pink-soft);   --c-deep: #c0235f; }
+.op-divide   { --c: var(--lilac);  --c-soft: var(--lilac-soft);  --c-deep: #5b3fd0; }
+.op-add      { --c: var(--mint);   --c-soft: var(--mint-soft);   --c-deep: #12795a; }
+.op-subtract { --c: var(--butter); --c-soft: var(--butter-soft); --c-deep: #8a5a00; }
+
+/* Selected: filled with its colour, lifted, and a tick badge */
+.chip input:checked + .chip-face {
+    background: var(--c-soft);
+    border-color: var(--c);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 0 var(--c);
+}
+
+.chip input:checked + .chip-face .sym { background: var(--milk); }
+.chip input:checked + .chip-face .chip-name { color: var(--ink); }
+
+.chip input:checked + .chip-face::after {
+    content: "✓";
+    position: absolute;
+    top: -9px;
+    right: -7px;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--c-deep);
+    background: var(--milk);
+    border: 3px solid var(--c);
+    border-radius: 50%;
+}
+
+.chip input:focus-visible + .chip-face { outline: 4px solid var(--focus); outline-offset: 3px; }
+
+/* ===== Number bubbles ===== */
+.bubbles {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.bubble-face {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1.15;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    background: var(--milk);
+    border: 3px solid var(--line);
+    border-radius: 50%;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.bubble input:checked + .bubble-face {
+    color: var(--milk);
+    background: var(--lilac);
+    border-color: var(--lilac);
+    box-shadow: 0 4px 0 #5b3fd0;
+}
+
+.bubble input:focus-visible + .bubble-face { outline: 4px solid var(--focus); outline-offset: 3px; }
+
+/* Numbers 1-4 while "Kun store tall" is on */
+.bubble.disabled { cursor: not-allowed; }
+.bubble.disabled .bubble-face {
+    color: #b5b0cf;
+    border-style: dashed;
+    background:
+        linear-gradient(135deg, transparent 47%, #cfc9ea 47% 53%, transparent 53%),
+        #f1eff9;
+}
+
+/* ===== Options row ===== */
+.toggles-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 26px;
+}
+
+.toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 8px 5px 14px;
+    background: var(--tile);
+    border: 2px solid var(--line);
+    border-radius: 999px;
+}
+
+.toggle-label { font-size: 1.05rem; font-weight: 600; color: var(--ink); }
+
+.count-select {
+    font: inherit;
+    font-weight: 700;
+    color: var(--ink);
+    background: var(--milk);
+    border: 2px solid var(--line);
+    border-radius: 999px;
+    padding: 2px 12px;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 54px;
+    height: 32px;
+    flex: none;
+}
+
+.toggle-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+.slider {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    background: #cfc9ea;
+    border-radius: 999px;
+    transition: background-color 0.2s;
+}
+
+.slider::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 24px;
+    height: 24px;
+    background: var(--milk);
+    border-radius: 50%;
+    box-shadow: 0 2px 0 rgba(58, 49, 87, 0.25);
+    transition: transform 0.2s;
+}
+
+input:checked + .slider { background: var(--pink); }
+.show-answers input:checked + .slider { background: var(--lilac); }
+input:checked + .slider::before { transform: translateX(22px); }
+.toggle-switch input:focus-visible + .slider { outline: 4px solid var(--focus); outline-offset: 3px; }
+
+/* ===== Buttons ===== */
+.pill-btn {
+    font-family: var(--font);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ink);
+    background: var(--milk);
+    border: 3px solid var(--line);
+    border-radius: 999px;
+    padding: 8px 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 0 var(--line);
+    transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.pill-btn:hover { background: var(--tile); }
+.pill-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.pill-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: 0 4px 0 var(--line); }
+
+.pill-btn-mint { color: var(--milk); background: var(--mint-deep); border-color: var(--mint-deep); box-shadow: 0 4px 0 #0c5e45; }
+.pill-btn-mint:hover { background: #17996f; }
+.pill-btn-butter { color: var(--ink); background: var(--butter); border-color: var(--butter); box-shadow: 0 4px 0 #c9922a; }
+.pill-btn-butter:hover { background: #ffd36b; }
+
+.clear-button {
+    margin-left: auto;
+    color: #b32a31;
+    background: var(--coral-soft);
+    border-color: var(--coral);
+    box-shadow: 0 4px 0 var(--coral);
+}
+
+.clear-button:hover { background: #ffc7c9; }
+.clear-button:active { box-shadow: 0 1px 0 var(--coral); }
+
+/* ===== Sticky HUD: score, streak, and a path with a walking cat ===== */
+.progress-container {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: none; /* shown by JS while playing */
+    margin: 0 6px 26px;
+    padding: 10px 24px 16px;
+    background: rgba(255, 255, 255, 0.94);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border: 3px solid var(--line);
+    border-radius: 26px;
+    box-shadow: var(--sticker);
+}
+
+.gamification-panel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.points-container,
+.streak-container {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 2px 14px;
+    border-radius: 999px;
+}
+
+.points-container { background: var(--pink-soft); }
+.streak-container { background: var(--butter-soft); }
+
+.points-label, .streak-label { font-size: 1.1rem; font-weight: 600; color: var(--ink-soft); }
+.points-value, .streak-value { font-size: 1.7rem; font-weight: 800; line-height: 1.1; color: var(--ink); min-width: 1.4ch; text-align: center; }
+.highest-streak { font-size: 1rem; color: var(--ink-soft); }
+
+@keyframes bounce {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.3) rotate(-4deg); }
+    100% { transform: scale(1); }
+}
+
+.points-increase { display: inline-block; animation: bounce 0.4s ease; }
+
+.walk-track {
+    position: relative;
+    height: 14px;
+    background: var(--lilac-soft);
+    border-radius: 999px;
+}
+
+.progress-bar {
+    position: relative;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ffa3c8, var(--pink));
+    border-radius: 999px;
+    transition: width 0.5s ease;
+}
+
+/* The little cat walking at the end of the path */
+.progress-bar::after {
+    content: "";
+    position: absolute;
+    right: -16px;
+    top: -17px;
+    width: 38px;
+    height: 34px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 38 34'%3E%3Cg stroke='%234a4468' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M6 15 L4 2 L15 8 Z' fill='%23b8bdd3'/%3E%3Cpath d='M32 15 L34 2 L23 8 Z' fill='%23b8bdd3'/%3E%3Cellipse cx='19' cy='20' rx='16' ry='12' fill='%23b8bdd3'/%3E%3Cpath d='M16 9 v4 M19 8 v5 M22 9 v4' fill='none'/%3E%3Cpath d='M16 25 q1.5 2 3 0 q1.5 2 3 0' fill='none' stroke-width='1.5'/%3E%3C/g%3E%3Ccircle cx='12' cy='20' r='1.8' fill='%234a4468'/%3E%3Ccircle cx='26' cy='20' r='1.8' fill='%234a4468'/%3E%3Cellipse cx='8' cy='25' rx='3' ry='2' fill='%23ff9cc2' fill-opacity='.7'/%3E%3Cellipse cx='30' cy='25' rx='3' ry='2' fill='%23ff9cc2' fill-opacity='.7'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+
+/* ===== Problems ===== */
+.problems-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0 6px;
+    padding: 12px;
+}
+
+@media (min-width: 640px) {
+    .problems-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 18px; }
+}
+
+@media (min-width: 900px) {
+    .problems-list { grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 24px; }
+}
+
+.problem-container {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    padding: 8px 8px 8px 12px;
+    font-size: clamp(1.2rem, 5.2vw, 1.65rem);
+    font-weight: 700;
+    white-space: nowrap;
+    background: var(--tile);
+    border: 2px solid var(--line);
+    border-radius: 18px;
+}
+
+.problem-container:focus-within { outline: 3px solid var(--lilac); outline-offset: 2px; }
+
+.problem-container:has(.correct-answer)   { background: var(--mint-soft);   border-color: var(--mint); }
+.problem-container:has(.incorrect-answer) { background: var(--coral-soft);  border-color: var(--coral); }
+.problem-container:has(.invalid-answer)   { background: var(--butter-soft); border-color: var(--butter); }
+
+.number-part { display: inline-block; width: 2ch; text-align: right; }
+.operator { display: inline-block; width: 1.8ch; text-align: center; color: var(--pink-deep); }
+
+.answer-input {
+    width: 2.7em;
+    height: 1.7em;
+    margin-left: 4px;
+    padding: 0;
+    font: inherit;
+    font-weight: 700;
+    text-align: center;
+    color: var(--ink);
+    background: var(--milk);
+    border: 2.5px solid var(--lilac);
+    border-radius: 12px;
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+.answer-input::-webkit-outer-spin-button,
+.answer-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+.answer-input:focus { outline: none; border-color: var(--pink-deep); box-shadow: 0 0 0 4px var(--pink-soft); }
+
+.answer-input[readonly] { color: #5b3fd0; background: var(--lilac-soft); }
+.correct-answer   { color: #0f6e50; border-color: var(--mint); }
+.incorrect-answer { color: #c8323a; border-color: var(--coral); }
+.invalid-answer   { color: #8a5a00; border-color: var(--butter); }
+
+.feedback {
+    display: inline-block;
+    min-width: 1.1em;
+    margin-left: 6px;
+    font-size: 1.1em;
+    font-weight: 800;
+    text-align: center;
+}
+
+/* JS sets plain named colours inline; these shades read better on the tinted tiles */
+.correct-answer + .feedback   { color: #0f6e50 !important; }
+.incorrect-answer + .feedback { color: #c8323a !important; }
+.invalid-answer + .feedback   { color: #8a5a00 !important; }
+
+.footer { margin-top: 30px; text-align: center; font-size: 1.15rem; color: var(--ink-soft); }
+.footer p { margin: 0; }
+
+/* ===== Summary modal ===== */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(58, 49, 87, 0.55);
+}
+
+@keyframes pop-in {
+    from { opacity: 0; transform: translateY(14px) scale(0.96); }
+    to { opacity: 1; transform: none; }
+}
+
+.modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    max-height: 100%;
+    overflow-y: auto;
+    padding: 28px 22px 24px;
+    animation: pop-in 0.25s ease-out;
+}
+
+.modal h2 {
+    margin: 0 0 18px;
+    font-size: 2.2rem;
+    font-weight: 800;
+    text-align: center;
+    color: var(--ink);
+    text-shadow: 3px 3px 0 var(--pink-soft);
+}
+
+.close-button {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    font: inherit;
+    font-size: 1.7rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ink-soft);
+    background: var(--tile);
+    border: 2px solid var(--line);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.close-button:hover { background: var(--lilac-soft); }
+
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.summary-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 12px 16px;
+    border-radius: 20px;
+}
+
+.item-points  { background: var(--pink-soft); }
+.item-time    { background: var(--lilac-soft); }
+.item-correct { background: var(--mint-soft); }
+.item-streak  { background: var(--butter-soft); }
+
+.summary-label { font-size: 1.1rem; font-weight: 600; color: var(--ink-soft); }
+.summary-value { font-size: 1.7rem; font-weight: 800; line-height: 1.1; color: var(--ink); }
+
+.practice-buttons { display: flex; flex-direction: column; gap: 14px; padding-bottom: 4px; }
+.practice-buttons .pill-btn { width: 100%; }
+
+/* ===== Small phones ===== */
+@media (max-width: 420px) {
+    .container { padding-left: 8px; padding-right: 8px; }
+    .hero { margin-bottom: 68px; }
+    .chip-face { min-height: 92px; }
+    .sym { width: 44px; height: 44px; font-size: 1.9rem; }
+    .toggle-container { flex: 1 1 100%; }
+    .clear-button { flex: 1 1 100%; margin: 4px 0 0; }
+    .summary-value { font-size: 1.4rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* ===== Print: a plain worksheet ===== */
+@media print {
+    .no-print { display: none !important; }
+    .controls, .hero-hint, .footer, .modal { display: none !important; }
+
+    body { background: #fff; color: #000; font-size: 10pt; }
+
+    .container { max-width: none; padding: 5mm; }
+    .hero { margin-bottom: 5mm; }
+    .title { font-size: 22pt; text-shadow: none; }
+
+    .panel, .problems-list {
+        margin: 0;
+        padding: 0;
+        background: #fff;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .problems-list { grid-template-columns: repeat(4, 1fr); gap: 4px 8px; }
+
+    .problem-container {
+        padding: 4px 6px;
+        font-size: 12pt;
+        background: none;
+        border: 0;
+        outline: none !important;
+    }
+
+    .operator { color: #000; }
+
+    .answer-input {
+        width: 32px;
+        height: 20px;
+        color: #000;
+        background: transparent;
+        border: 0;
+        border-bottom: 1px solid #000;
+        border-radius: 0;
+    }
+
+    .feedback { display: none; }
+
+    @page { size: A4; margin: 3mm; }
+}
