@@ -624,6 +624,38 @@ input:checked + .slider::before { transform: translateX(26px); }
 
 .practice-buttons .mc-btn { width: 100%; }
 
+/* ===== Design switcher: a little hotbar of designs ===== */
+.theme-switcher {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: fit-content;
+    max-width: 100%;
+    gap: 6px;
+    margin: 22px auto 0;
+    padding: 6px;
+    background: var(--night);
+    box-shadow: 0 0 0 4px var(--ink);
+}
+
+.theme-option {
+    padding: 4px 16px;
+    font-size: 1.15rem;
+    color: #cfcfcf;
+    text-decoration: none;
+    background: var(--stone);
+    box-shadow: var(--bevel-slot);
+}
+
+.theme-option:hover { color: var(--white); background: #4a4a4a; }
+
+.theme-option[aria-current] {
+    color: var(--white);
+    background: #4b4b4b;
+    text-shadow: 2px 2px 0 #000;
+    box-shadow: var(--bevel-slot), 0 0 0 3px var(--white);
+}
+
 /* ===== Small phones ===== */
 @media (max-width: 420px) {
     .container { padding-left: 8px; padding-right: 8px; }

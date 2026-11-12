@@ -10,13 +10,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/minecraft.css">
 </head>
-<body>
+<body data-theme="minecraft">
 
     <div class="container">
 
         <header class="hero">
             <h1 class="sign">Gangetabellen</h1>
             <p class="hero-hint">Skriv svaret og trykk Enter for å gå videre.</p>
+            <nav class="theme-switcher no-print" id="theme-switcher"></nav>
         </header>
 
         <!-- Settings: the hotbar picks the kind of math, the slots pick the numbers -->
@@ -163,6 +164,7 @@
     <script src="js/controls.js"></script>
     <script src="js/summary.js"></script>
     <script src="js/persistence.js"></script>
+    <script src="js/theme.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

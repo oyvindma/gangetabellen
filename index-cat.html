@@ -10,13 +10,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/cat.css">
 </head>
-<body>
+<body data-theme="cat">
 
     <div class="container">
 
         <header class="hero">
             <h1 class="title">Gangetabellen</h1>
             <p class="hero-hint">Skriv svaret og trykk Enter for å gå videre.</p>
+            <nav class="theme-switcher no-print" id="theme-switcher"></nav>
         </header>
 
         <!-- Settings: sticker chips pick the kind of math, bubbles pick the numbers -->
@@ -184,6 +185,7 @@
     <script src="js/controls.js"></script>
     <script src="js/summary.js"></script>
     <script src="js/persistence.js"></script>
+    <script src="js/theme.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

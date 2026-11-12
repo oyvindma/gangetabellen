@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matematikkprøve</title>
+    <!-- Google Fonts for kid-friendly typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Fredoka+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-theme="classic">
+
+    <div class="container">
+
+        <h1>Matematikkprøve</h1>
+        <nav class="theme-switcher no-print" id="theme-switcher"></nav>
+        <div class="controls">
+            <div class="operation-selection">
+                <p>Velg regnearter:</p>
+                <div>
+                    <label>
+                        <input type="checkbox" name="operation_type" value="multiply" checked onchange="onConfigChange(this)">
+                        <span>Multiplikasjon (×)</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="operation_type" value="divide" onchange="onConfigChange(this)">
+                        <span>Divisjon (÷)</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="operation_type" value="add" onchange="onConfigChange(this)">
+                        <span>Addisjon (+)</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="operation_type" value="subtract" onchange="onConfigChange(this)">
+                        <span>Subtraksjon (−)</span>
+                    </label>
+                </div>
+            </div>
+            <div class="number-selection">
+                <p>Velg tallområde (for faktorer/operander):</p>
+                <div>
+                    <label>
+                        <input type="checkbox" name="a_number" value="1" checked onchange="onConfigChange(this)">
+                        <span>1</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="2" checked onchange="onConfigChange(this)">
+                        <span>2</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="3" checked onchange="onConfigChange(this)">
+                        <span>3</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="4" checked onchange="onConfigChange(this)">
+                        <span>4</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="5" checked onchange="onConfigChange(this)">
+                        <span>5</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="6" checked onchange="onConfigChange(this)">
+                        <span>6</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="7" checked onchange="onConfigChange(this)">
+                        <span>7</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="8" checked onchange="onConfigChange(this)">
+                        <span>8</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="9" checked onchange="onConfigChange(this)">
+                        <span>9</span>
+                    </label>
+                    <label>
+                        <input type="checkbox" name="a_number" value="10" checked onchange="onConfigChange(this)">
+                        <span>10</span>
+                    </label>
+                </div>
+            </div>
+            <div class="toggles-container">
+                <div class="toggle-container">
+                    <span class="toggle-label">Sortert rekkefølge</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="order-toggle" onchange="onConfigChange(this)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-container">
+                    <label class="toggle-label" for="problem-count">Antall oppgaver</label>
+                    <select id="problem-count" class="count-select" onchange="onConfigChange(this)">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="toggle-container">
+                    <span class="toggle-label" id="large-numbers-label">Kun store tall</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="large-numbers-toggle" onchange="onConfigChange(this)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="toggle-container show-answers">
+                    <span class="toggle-label" id="show-answers-label">Vis svar</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="show-results" onchange="onConfigChange(this)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <button type="button" id="clear-btn" class="clear-button no-print" onclick="clearTest()">Nullstill</button>
+                <!-- Hidden input for interactive mode, always checked -->
+                <input type="checkbox" id="interactive-mode" checked style="display: none;">
+            </div>
+        </div>
+        <div class="gamification-panel no-print" id="gamification-panel" style="display: none;">
+            <div class="points-container">
+                <span class="points-label">Poeng:</span>
+                <span class="points-value" id="points-display">0</span>
+            </div>
+            <div class="streak-container">
+                <span class="streak-label">På rad:</span>
+                <span class="streak-value" id="streak-display">0</span>
+                <span class="highest-streak">(Beste: <span id="highest-streak">0</span>)</span>
+            </div>
+        </div>
+        <div class="progress-container no-print" id="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="problems-list" id="problems-list">
+            <!-- Problems will be generated here via JavaScript -->
+        </div>
+        <div class="footer">
+            <p>Skriv svarene på linjene. <span style="color: var(--secondary-color);">Lykke til! 🚀</span></p>
+        </div>
+
+        <!-- Summary Modal -->
+        <div id="summary-modal" class="modal no-print">
+            <div class="modal-content">
+                <span class="close-button" id="summary-close">&times;</span>
+                <h2>Oppsummering</h2>
+                <div class="summary-stats">
+                    <div class="summary-item">
+                        <span class="summary-label">Total poengsum:</span>
+                        <span id="summary-points" class="summary-value">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Tid brukt:</span>
+                        <span id="summary-time" class="summary-value">0 sekunder</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Riktige svar:</span>
+                        <span id="summary-correct" class="summary-value">0 av 0</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Høyeste streak:</span>
+                        <span id="summary-streak" class="summary-value">0</span>
+                    </div>
+                </div>
+                <div class="practice-buttons">
+                    <button type="button" id="restart-button" class="restart-button">Prøv igjen</button>
+                    <button type="button" id="practice-button" class="practice-button">Bli enda bedre! 💪</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/clock.js"></script>
+    <script src="js/problems.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/answers.js"></script>
+    <script src="js/controls.js"></script>
+    <script src="js/summary.js"></script>
+    <script src="js/persistence.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

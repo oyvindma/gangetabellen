@@ -1043,3 +1043,28 @@ input:checked + .slider:before {
 @media print {
     .modal { display: none !important; }
 }
+
+/* ============= DESIGN SWITCHER ============= */
+.theme-switcher {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 0 15px;
+}
+
+.theme-option {
+    padding: 4px 14px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-decoration: none;
+    background: #fff;
+    border: 2px solid var(--primary-color);
+    border-radius: 20px;
+}
+
+.theme-option:hover { background: #e3f2fd; }
+.theme-option[aria-current] { color: #fff; background: var(--primary-color); }
+.theme-option:focus-visible { outline: 3px solid var(--accent-color-2); outline-offset: 2px; }

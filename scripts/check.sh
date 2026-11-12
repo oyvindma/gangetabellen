@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run all checks for index.html: js/*.js syntax, then every Playwright scenario
+# Run all checks for every design page (index-*.html; index.html is only the router): js/*.js syntax, then every Playwright scenario
 # in playwright-scenarios/ (desktop + phone) via the verify-webpage Claude skill.
 # Prints only failures and the final tally. Exit code is non-zero if anything failed.
 set -uo pipefail
@@ -24,7 +24,7 @@ echo "ok    js syntax"
 args=()
 for f in playwright-scenarios/*.mjs; do args+=(--test "$f"); done
 failed=0
-for page in index.html index-minecraft.html index-cat.html; do
+for page in index-classic.html index-minecraft.html index-cat.html; do
   echo "--- $page"
   out="$(node "$VERIFY" --root . --page "$page" "${args[@]}" --seed 1 2>&1)"
   status=$?

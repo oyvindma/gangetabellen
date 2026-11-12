@@ -592,6 +592,33 @@ input:checked + .slider::before { transform: translateX(22px); }
 .practice-buttons { display: flex; flex-direction: column; gap: 14px; padding-bottom: 4px; }
 .practice-buttons .pill-btn { width: 100%; }
 
+/* ===== Design switcher ===== */
+.theme-switcher {
+    display: flex;
+    width: fit-content;
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    margin: 14px auto 0;
+    padding: 4px;
+    background: var(--milk);
+    border: 2px solid var(--line);
+    border-radius: 24px;
+}
+
+.theme-option {
+    padding: 2px 12px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-decoration: none;
+    border-radius: 999px;
+}
+
+.theme-option:hover { background: var(--tile); }
+.theme-option[aria-current] { color: var(--milk); background: var(--lilac); }
+
 /* ===== Small phones ===== */
 @media (max-width: 420px) {
     .container { padding-left: 8px; padding-right: 8px; }
