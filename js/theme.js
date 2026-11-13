@@ -6,7 +6,8 @@ const DEFAULT_THEME = 'classic';
 const THEMES = [
     { id: 'classic',   label: 'Klassisk',    page: 'index-classic.html' },
     { id: 'minecraft', label: 'Blokkverden', page: 'index-minecraft.html' },
-    { id: 'cat',       label: 'Kattekos',    page: 'index-cat.html' }
+    { id: 'cat',       label: 'Kattekos',    page: 'index-cat.html' },
+    { id: 'build',     label: '3D-bygg',     page: 'index-build.html' }
 ];
 
 function findTheme(id) {

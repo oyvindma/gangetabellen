@@ -24,7 +24,7 @@ echo "ok    js syntax"
 args=()
 for f in playwright-scenarios/*.mjs; do args+=(--test "$f"); done
 failed=0
-for page in index-classic.html index-minecraft.html index-cat.html; do
+for page in index-classic.html index-minecraft.html index-cat.html index-build.html; do
   echo "--- $page"
   out="$(node "$VERIFY" --root . --page "$page" "${args[@]}" --seed 1 2>&1)"
   status=$?

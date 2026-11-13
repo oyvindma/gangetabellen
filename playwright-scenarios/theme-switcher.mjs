@@ -12,12 +12,12 @@ export default async function ({ page, check, eq, open, screenshot }) {
   const goTo = async (theme) => {
     await Promise.all([
       page.waitForURL(new RegExp(`index-${theme}\\.html`)),
-      page.click(`#theme-switcher a[data-theme=${theme}]`)
+      page.click(`#theme-switcher a[data-theme="${theme}"]`)
     ]);
     await page.waitForLoadState('load');
   };
 
-  eq('three designs offered', await page.$$eval('#theme-switcher a', as => as.map(a => a.dataset.theme)), ['classic', 'minecraft', 'cat']);
+  eq('four designs offered', await page.$$eval('#theme-switcher a', as => as.map(a => a.dataset.theme)), ['classic', 'minecraft', 'cat', 'build']);
   eq('current design is marked', await current(), here);
   eq('nothing saved before the first switch', await saved(), null);
 
@@ -30,7 +30,7 @@ export default async function ({ page, check, eq, open, screenshot }) {
   await page.fill('#answer-0', '1');
 
   let first = true;
-  for (const theme of ['cat', 'minecraft', 'classic']) {
+  for (const theme of ['cat', 'build', 'minecraft', 'classic']) {
     await goTo(theme);
     eq(`switched to ${theme}`, await page.evaluate(() => document.body.dataset.theme), theme);
     eq(`${theme} is marked current`, await current(), theme);
