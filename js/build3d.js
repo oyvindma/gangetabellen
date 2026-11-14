@@ -3,7 +3,8 @@
 // test goes on. The game logic is untouched: this file only listens to renderScore() and
 // renderProgress() (which the game already calls on every answer and on every reset) and
 // draws with three.js (js/vendor/three.min.js, r159: the last release that ships a classic,
-// non-module build, so the page still works from file:// without a build step).
+// non-module build, so the page still works from file:// without a build step), or with a
+// Canvas 2D isometric fallback when WebGL is unavailable (force it with ?2d).
 
 const BUILD_KEY = 'gangetabellen.build';
 const BLOCK_FALL_HEIGHT = 7;   // blocks start this far above their place
@@ -122,19 +123,7 @@ function blocksForProgress(total, solved, problems) {
 }
 
 // ----- three.js scene -----
-const buildStage = (function createBuildStage() {
-    const canvas = document.getElementById('build-canvas');
-    const caption = document.getElementById('build-caption');
-    if (!canvas || typeof THREE === 'undefined') return null;
-
-    let renderer;
-    try {
-        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    } catch (e) {
-        document.getElementById('build-stage').hidden = true; // no WebGL: the game still works without the 3D view
-        return null;
-    }
-
+function createWebglStage(canvas, caption, renderer) {
     const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(40, 2, 0.1, 200);
@@ -330,11 +319,215 @@ const buildStage = (function createBuildStage() {
     requestAnimationFrame(frame);
 
     return {
+        kind: 'webgl',
         setPicture, addBlocks, celebrate,
         get blockCount() { return blocks.length; },
-        get landed() { return falling.length === 0; },
         setCaption(text) { caption.textContent = text; }
     };
+}
+
+// ----- Canvas 2D fallback: the same build in an isometric view, for devices without WebGL -----
+function shadeColor(hex, factor) {
+    const n = parseInt(hex.slice(1), 16);
+    const ch = shift => Math.max(0, Math.min(255, Math.round(((n >> shift) & 255) * factor)));
+    return `rgb(${ch(16)},${ch(8)},${ch(0)})`;
+}
+
+function createIsometricStage(canvas, caption) {
+    const ctx = canvas.getContext('2d');
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const ELEVATION = 0.55;        // camera tilt (radians)
+    const BASE_TURN = 0.55;        // turn of the build: 0 = straight on, PI/4 = classic isometric
+    const GROUND_PAD = 2;          // grass border around the picture
+
+    let picture = null, blocks = [], fitW = 8, fitH = 8, fitD = 2, groundColors = null;
+    let order = [];                // block indices sorted back to front
+    let cells = [];                // one entry per placed block
+    const confetti = [];
+    let celebrateStart = -1;
+    let turn = BASE_TURN, dragTurn = 0, dragging = false, lastDrag = 0, lastX = 0;
+    let scale = 20, offX = 0, offY = 0, cosT = 1, sinT = 0;
+
+    // World (x right, y up, z towards the viewer) -> screen, before scale/offset.
+    const project = (x, y, z) => {
+        const depth = x * sinT + z * cosT;
+        return [x * cosT - z * sinT, depth * Math.sin(ELEVATION) - y * Math.cos(ELEVATION)];
+    };
+
+    function setPicture(pic, seed) {
+        picture = pic;
+        blocks = buildBlockList(pic, seed);
+        fitW = pic.rows[0].length;
+        fitH = pic.rows.length;
+        fitD = pic.depth;
+        cells = [];
+        confetti.length = 0;
+        celebrateStart = -1;
+    }
+
+    function addBlocks(from, to, animate) {
+        const count = to - from;
+        const gap = Math.min(BLOCK_STAGGER_MS, 800 / Math.max(count, 1));
+        for (let i = from; i < to; i++) {
+            const b = blocks[i];
+            const rand = mulberry32(i * 31 + 5);
+            const jitter = 0.94 + rand() * 0.12;
+            const cell = {
+                x: b.x, z: b.z, baseY: b.y - 0.5, y: b.y - 0.5, vy: 0, delay: 0, bounces: 1, squash: 0, falling: false,
+                top: shadeColor(b.color, 1.18 * jitter), left: shadeColor(b.color, jitter), right: shadeColor(b.color, 0.72 * jitter)
+            };
+            if (animate && !reduceMotion) {
+                cell.y = cell.baseY + BLOCK_FALL_HEIGHT + rand() * 2;
+                cell.delay = (i - from) * gap;
+                cell.falling = true;
+            }
+            cells.push(cell);
+        }
+    }
+
+    function celebrate() {
+        const now = performance.now();
+        celebrateStart = now;
+        if (reduceMotion) return;
+        const colors = ['#ffaa00', '#55ffff', '#55ff55', '#ff5555', '#ffffff', '#ff77ff'];
+        for (let i = 0; i < 60; i++) {
+            confetti.push({
+                color: colors[i % colors.length], born: now,
+                x: (Math.random() - 0.5) * fitW, y: fitH + 1 + Math.random() * 2, z: (Math.random() - 0.5) * (fitD + 3),
+                vx: (Math.random() - 0.5) * 3, vy: 2 + Math.random() * 4, vz: (Math.random() - 0.5) * 3
+            });
+        }
+    }
+
+    /** Draw an axis-aligned box whose bottom-centre is (cx, y0, cz). Three faces are visible. */
+    function drawBox(cx, y0, cz, sx, sy, sz, top, left, right) {
+        const x0 = cx - sx / 2, x1 = cx + sx / 2, z0 = cz - sz / 2, z1 = cz + sz / 2, y1 = y0 + sy;
+        const pt = (x, y, z) => { const [px, py] = project(x, y, z); return [offX + px * scale, offY + py * scale]; };
+        const face = (color, pts) => {
+            ctx.beginPath();
+            pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.stroke();
+        };
+        face(top,   [pt(x0, y1, z0), pt(x1, y1, z0), pt(x1, y1, z1), pt(x0, y1, z1)]);
+        face(left,  [pt(x0, y1, z1), pt(x1, y1, z1), pt(x1, y0, z1), pt(x0, y0, z1)]);  // faces the viewer (+z)
+        face(right, [pt(x1, y1, z1), pt(x1, y1, z0), pt(x1, y0, z0), pt(x1, y0, z1)]);  // faces right (+x)
+    }
+
+    function fitToCanvas(w, h) {
+        // Scale and centre so the finished picture and its ground always fit, whatever the turn
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        const gx = fitW / 2 + GROUND_PAD, gz = fitD / 2 + GROUND_PAD;
+        for (const [x, y, z] of [[-gx, -1, -gz], [gx, -1, -gz], [gx, -1, gz], [-gx, -1, gz],
+                                 [-fitW / 2, fitH, -fitD / 2], [fitW / 2, fitH, -fitD / 2], [fitW / 2, fitH, fitD / 2], [-fitW / 2, fitH, fitD / 2]]) {
+            const [px, py] = project(x, y, z);
+            minX = Math.min(minX, px); maxX = Math.max(maxX, px); minY = Math.min(minY, py); maxY = Math.max(maxY, py);
+        }
+        scale = Math.min((w * 0.94) / (maxX - minX), (h * 0.92) / (maxY - minY));
+        offX = w / 2 - ((minX + maxX) / 2) * scale;
+        offY = h / 2 - ((minY + maxY) / 2) * scale;
+    }
+
+    let last = performance.now();
+    function frame(now) {
+        requestAnimationFrame(frame);
+        const dt = Math.min((now - last) / 1000, 0.05);
+        last = now;
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        if (!w || !h) return;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+            canvas.width = Math.round(w * dpr);
+            canvas.height = Math.round(h * dpr);
+        }
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+
+        if (!dragging && now - lastDrag > 2500) dragTurn *= 0.97;
+        turn = Math.max(0.12, Math.min(1.45, BASE_TURN + dragTurn + (reduceMotion ? 0 : Math.sin(now / 2600) * 0.3)));
+        cosT = Math.cos(turn); sinT = Math.sin(turn);
+        fitToCanvas(w, h);
+
+        for (const c of cells) { // physics: the same drop, bounce and squash as the 3D version
+            if (c.falling) {
+                if (c.delay > 0) { c.delay -= dt * 1000; continue; }
+                c.vy -= BLOCK_GRAVITY * dt;
+                c.y += c.vy * dt;
+                if (c.y <= c.baseY) {
+                    c.y = c.baseY;
+                    if (c.bounces > 0 && c.vy < -5) { c.vy = -c.vy * 0.28; c.bounces--; }
+                    else { c.falling = false; c.vy = 0; c.squash = 1; }
+                }
+            }
+            if (c.squash > 0) c.squash = Math.max(0, c.squash - dt * 6);
+        }
+        const celebrating = celebrateStart >= 0 && now - celebrateStart < CELEBRATE_MS;
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+        ctx.lineJoin = 'round';
+        // Grass slab with a dirt edge
+        drawBox(0, -1, 0, fitW + GROUND_PAD * 2, 1, fitD + GROUND_PAD * 2, '#78c043', '#7a5530', '#5f4224');
+
+        // Back to front: x ascending, then z, then y (right for a viewer at +x, +z, above)
+        const standing = cells.filter(c => !c.falling).sort((a, b) => (a.x - b.x) || (a.z - b.z) || (a.baseY - b.baseY));
+        const dropping = cells.filter(c => c.falling && c.delay <= 0);
+        for (const c of standing.concat(dropping)) {
+            let y = c.y;
+            if (celebrating && !c.falling) y += Math.max(0, Math.sin((now - celebrateStart) / 160 - c.x * 0.6 - c.baseY * 0.3)) * 0.45;
+            const squash = 1 - c.squash * 0.2;
+            drawBox(c.x, y, c.z, 1 + c.squash * 0.12, squash, 1 + c.squash * 0.12, c.top, c.left, c.right);
+        }
+
+        for (let i = confetti.length - 1; i >= 0; i--) {
+            const c = confetti[i];
+            c.vy -= 9 * dt;
+            c.x += c.vx * dt; c.y += c.vy * dt; c.z += c.vz * dt;
+            if (now - c.born > CELEBRATE_MS + 400 || c.y < -2) { confetti.splice(i, 1); continue; }
+            const [px, py] = project(c.x, c.y, c.z);
+            const size = Math.max(3, scale * 0.22);
+            ctx.fillStyle = c.color;
+            ctx.fillRect(offX + px * scale - size / 2, offY + py * scale - size / 2, size, size);
+        }
+    }
+
+    // Drag sideways to turn the build (vertical swipes still scroll the page)
+    canvas.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; canvas.setPointerCapture(e.pointerId); });
+    canvas.addEventListener('pointermove', e => {
+        if (!dragging) return;
+        dragTurn = Math.max(-1, Math.min(1, dragTurn + (e.clientX - lastX) * 0.01));
+        lastX = e.clientX;
+    });
+    const endDrag = () => { dragging = false; lastDrag = performance.now(); };
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+    requestAnimationFrame(frame);
+
+    return {
+        kind: '2d',
+        setPicture, addBlocks, celebrate,
+        get blockCount() { return blocks.length; },
+        setCaption(text) { caption.textContent = text; }
+    };
+}
+
+/** three.js (WebGL) when it works; otherwise the Canvas 2D isometric view. Add ?2d to the address to force the fallback. */
+const buildStage = (function createBuildStage() {
+    const canvas = document.getElementById('build-canvas');
+    const caption = document.getElementById('build-caption');
+    if (!canvas) return null;
+    if (typeof THREE !== 'undefined' && !/[?&]2d\b/.test(location.search)) {
+        let renderer = null;
+        try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true }); } catch (e) { /* no WebGL: use the 2D view */ }
+        if (renderer) return createWebglStage(canvas, caption, renderer);
+    }
+    if (!canvas.getContext('2d')) {
+        document.getElementById('build-stage').hidden = true; // no canvas at all: the game still works without the view
+        return null;
+    }
+    return createIsometricStage(canvas, caption);
 })();
 
 // ----- Wiring to the game -----
@@ -411,7 +604,7 @@ function updateBuild(animate = true) {
 /** For the test scenarios and debugging. */
 function getBuildInfo() {
     return buildStage
-        ? { ready: buildProgress.ready, shown: buildProgress.shown, total: buildStage.blockCount, complete: buildProgress.complete, picture: BUILD_PICTURES[buildProgress.picture].name }
+        ? { renderer: buildStage.kind, ready: buildProgress.ready, shown: buildProgress.shown, total: buildStage.blockCount, complete: buildProgress.complete, picture: BUILD_PICTURES[buildProgress.picture].name }
         : null;
 }
 
